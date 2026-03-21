@@ -123,6 +123,17 @@ Todos os parâmetros sensíveis são gerenciados via **GitHub Settings → Secre
 
 ## Histórico de Alterações
 
+### Sessão 3 — 21/03/2026 (Walter + Claude Code) — Redesign do rodapé
+
+**Mudanças no `index.html`:**
+
+1. **Rodapé reformulado** — substituído o estilo anterior (card interno com borda/sombra) pelo novo modelo institucional centralizado
+2. **Estrutura HTML do rodapé** — agora usa `.site-footer-inner` como container centrado com `max-width: 1100px`; título em `.footer-title`; divisor decorativo em `.footer-divider`; linhas de texto em `<p>`
+3. **CSS atualizado** — removidas as classes `.footer-brand` e `.footer-address`; adicionadas `.site-footer-inner`, `.footer-title`, `.footer-divider`
+4. **Cor de fundo** — fundo branco (`#fff`) com texto escuro (`#333`); divisor em `rgba(0,0,0,.15)` (em vez do verde `#5f7f73` do modelo original)
+
+---
+
 ### Sessão 2 — 21/03/2026 (Walter + Claude Code) — Melhorias visuais
 
 **Mudanças no `index.html`:**

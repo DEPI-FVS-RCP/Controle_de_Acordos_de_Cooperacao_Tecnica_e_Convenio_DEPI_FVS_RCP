@@ -236,25 +236,35 @@
       .sidebar{ width: auto; position: relative; top: 0; }
     }
 
+    /* Rodapé institucional */
     .site-footer {
-      margin-top: 32px;
-      padding: 18px 24px;
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
-      font-size: 12px;
-      color: var(--muted);
-      line-height: 1.7;
-    }
-    .site-footer .footer-brand {
-      font-weight: 700;
-      font-size: 13px;
+      background: #fff;
       color: #333;
-      margin-bottom: 2px;
+      margin-top: auto;
+      padding: 28px 18px 22px;
     }
-    .site-footer .footer-address {
-      margin-top: 6px;
+    .site-footer-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 6px;
+    }
+    .site-footer .footer-title {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: .3px;
+      margin-bottom: 4px;
+    }
+    .site-footer p { margin: 0; font-size: 13px; opacity: .92; line-height: 1.6 }
+    .site-footer .footer-divider {
+      width: 60px;
+      height: 2px;
+      background: rgba(0,0,0,.15);
+      border-radius: 2px;
+      margin: 10px 0;
     }
   </style>
 </head>
@@ -457,11 +467,12 @@
   </div>
 
   <footer class="site-footer">
-    <div class="footer-brand">FVS-RCP • DEPI</div>
-    <div>Fundação de Vigilância em Saúde do Amazonas – Dra. Rosemary Costa Pinto (FVS-RCP)</div>
-    <div>Diretoria de Ensino, Pesquisa e Inovação (DEPI)</div>
-    <div class="footer-address">
-      <strong>Endereço:</strong> Avenida Torquato Tapajós, 4.010, Colônia Santo Antônio, CEP 69.093-018, Manaus – AM.
+    <div class="site-footer-inner">
+      <div class="footer-title">FVS-RCP • DEPI</div>
+      <div class="footer-divider"></div>
+      <p>Fundação de Vigilância em Saúde do Amazonas – Dra. Rosemary Costa Pinto (FVS-RCP)</p>
+      <p>Diretoria de Ensino, Pesquisa e Inovação (DEPI)</p>
+      <p>Endereço: Avenida Torquato Tapajós, 4.010, Colônia Santo Antônio, CEP 69.093-018, Manaus – AM.</p>
     </div>
   </footer>
 
