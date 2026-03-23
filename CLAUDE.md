@@ -230,6 +230,23 @@ Acesse o repositório institucional → **Settings → Secrets and variables →
 
 ---
 
+## Atualização — 23/03/2026 (Sessão 4 — Walter + Claude Code) — Ajuste visual da marca FAROL
+
+### Alterações realizadas
+
+1. **Posicionamento da marca FAROL corrigido** — o bloco `#farol-assinatura-fixa` passou de centralizado verticalmente no rodapé (`top: 50%; transform: translateY(-50%)`) para ancorado na borda inferior direita (`bottom: 10px; right: 16px`), deixando o ícone e o texto "FAROL" na extremidade inferior direita da página.
+
+2. **Cor da marca FAROL alterada para cinza médio** — tanto o stroke do SVG quanto a cor do texto `.farol-texto` foram alterados de tons escuros (`#111` e `#555`) para `#888` (cinza médio), reduzindo o contraste e conferindo um aspecto mais discreto à assinatura.
+
+### Arquivos afetados
+
+| Arquivo | Tipo de alteração |
+|---|---|
+| `index.html` | CSS do `#farol-assinatura-fixa` (posição) e atributo `stroke` do SVG + cor do texto (cor) |
+| `CLAUDE.md` | Adição desta entrada de histórico |
+
+---
+
 ## Atualização — 23/03/2026
 
 ### Alterações realizadas
