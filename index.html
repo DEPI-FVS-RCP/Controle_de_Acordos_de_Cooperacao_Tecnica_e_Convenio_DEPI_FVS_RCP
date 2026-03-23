@@ -1,248 +1,577 @@
 <!doctype html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Controle de Acordos de Cooperação Técnica e Convênios</title>
-
-  <!-- libs (compatíveis com GitHub Pages e localhost) -->
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-
+  <meta name="theme-color" content="#2f6f5f" />
+  <title>Pesquisadores PAIC/FVS-RCP</title>
   <style>
-    :root { --card:#fff; --border:#e7e7e7; --muted:#666; --bg:#fafafa; }
+    /* ══════════════════════════════════
+       TOKENS
+    ══════════════════════════════════ */
+    :root {
+      --bg:           #eef3f0;
+      --card:         #ffffff;
+      --ink:          #16312c;
+      --muted:        #5c7970;
+      --brand:        #2f6f5f;
+      --brand-dark:   #1e5444;
+      --brand-light:  #e8f1ee;
+      --header-bg:    #5f7f73;
+      --line:         #dce8e3;
+      --line-light:   #eef4f1;
 
-    html { scrollbar-gutter: stable; }
-    body { overflow-y: scroll; }
-
-    body { font-family: Arial, sans-serif; margin: 18px 24px; background:var(--bg); }
-    h3 { margin: 10px 0 10px 0; }
-
-    .topbar{
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 14px 16px;
-      margin: 8px 0 16px 0;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
-    }
-    .brand{ display:flex; align-items:center; gap:14px; }
-    .brand-logos{
-      display:flex; align-items:center; gap:12px;
-      padding-right:14px; border-right:1px solid #eee;
-    }
-    .logo{ display:block; height:54px; width:auto; object-fit:contain; }
-    .logo.fvs{ height:48px; }
-    .logo.depi{ height:54px; border-radius:8px; }
-
-    .brand-text .org{ font-size:12px; color:var(--muted); letter-spacing:.5px; text-transform:uppercase; margin-bottom:2px; display:flex; align-items:center; gap:8px; }
-    .brand-text .title{ margin:0; font-size:30px; line-height:1.15; display:flex; align-items:center; gap:10px; }
-    .brand-text .subtitle{ margin-top:4px; font-size:13px; color:var(--muted); }
-
-    .titleIcon{ width: 24px; height: 24px; flex: 0 0 24px; }
-
-    .layout{ display:flex; gap:14px; align-items:flex-start; }
-    .sidebar{
-      width: 260px;
-      flex: 0 0 260px;
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 12px;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
-      position: sticky;
-      top: 12px;
-      align-self: flex-start;
-    }
-    .sidebar h4{ margin: 6px 0 10px 0; font-size: 14px; }
-    .field{ margin: 10px 0; }
-    .label{ font-size: 12px; color: var(--muted); margin-bottom: 4px; }
-    .select{
-      width: 100%;
-      padding: 9px 10px;
-      border: 1px solid #ddd;
-      border-radius: 10px;
-      background: #fff;
-      font-size: 13px;
-      outline: none;
+      --dir-bg:       #e8f1ee;
+      --dir-bd:       #c4d9cf;
+      --dir-tx:       #2a4f44;
     }
 
-    .main{ flex: 1; min-width: 420px; }
+    /* ══════════════════════════════════
+       RESET / BASE
+    ══════════════════════════════════ */
+    *, *::before, *::after { box-sizing: border-box; }
 
-    .cards { display:flex; gap:12px; flex-wrap:wrap; margin: 0 0 18px 0; }
-    .card{
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 14px 16px;
-      min-width: 220px;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
-    }
-    .card .kpiLabel { color:var(--muted); font-size:12px; }
-    .card .value { font-size:28px; font-weight:800; margin-top:6px; }
-
-    .card.kpi-green { border-top: 3px solid #16a34a; }
-    .card.kpi-amber { border-top: 3px solid #f59e0b; }
-    .card.kpi-red   { border-top: 3px solid #d62c26; }
-    .card.kpi-green .value { color: #16a34a; }
-    .card.kpi-amber .value { color: #d97706; }
-    .card.kpi-red   .value { color: #d62c26; }
-
-    .row { display:flex; gap:14px; flex-wrap:wrap; }
-    .panel{
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 12px;
-      flex: 1;
-      min-width: 380px;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
-    }
-
-    #chart_status, #chart_venc, #chart_map, #chart_dir { width:100%; height:320px; }
-
-    .legend-risk {
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu,
+                   "Helvetica Neue", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      min-height: 100vh;
       display: flex;
-      gap: 14px;
-      flex-wrap: wrap;
-      margin: 8px 0 0 0;
-      font-size: 12px;
-      color: #444;
-    }
-    .legend-risk .item { display:flex; align-items:center; gap:6px; }
-    .legend-risk .box {
-      width: 12px; height: 12px; border-radius: 3px; border: 1px solid #ccc; display:inline-block;
-    }
-    .legend-risk .red { background: #d62c26; }
-    .legend-risk .yellow { background: #f59e0b; }
-    .legend-risk .green { background: #16a34a; }
-    .legend-risk .gray { background: #9ca3af; }
-
-    .legend-status{
-      display:flex; gap:14px; flex-wrap:wrap; margin-top: 8px; font-size:12px; color:#444;
-    }
-    .legend-status .item{ display:flex; align-items:center; gap:6px; }
-    .legend-status .box{ width:12px; height:12px; border-radius:3px; border:1px solid #ccc; display:inline-block; }
-    .legend-status .vig{ background:#16a34a; }
-    .legend-status .crit{ background:#d62c26; }
-    .legend-status .alt{ background:#f59e0b; }
-    .legend-status .sem{ background:#9ca3af; }
-
-    .legenda{
-      background:#f9f9f9;
-      border:1px solid #ddd;
-      border-radius:10px;
-      padding:10px 12px;
-      font-size: 12px;
-      color:#444;
+      flex-direction: column;
+      -webkit-font-smoothing: antialiased;
     }
 
-    .toolbar {
-      display:flex;
-      gap:8px;
-      margin: 10px 0 6px 0;
-      align-items: center;
-    }
-    #search{
-      flex: 1;
-      padding: 10px 12px;
-      border:1px solid #ddd;
-      border-radius:10px;
-      font-size: 13px;
-      outline:none;
-      background:#fff;
-    }
-    .btn{
-      border:1px solid #ccc;
-      background:#f5f5f5;
-      border-radius:8px;
-      padding:6px 10px;
-      cursor:pointer;
-      font-size:12px;
-      min-width:84px;
-      white-space: nowrap;
-    }
-    .btn.active {
-      background: #111;
+    /* Acessibilidade: skip link */
+    .skip-link {
+      position: absolute;
+      top: -100%;
+      left: 16px;
+      z-index: 200;
+      background: var(--brand);
       color: #fff;
-      border-color: #111;
+      padding: 8px 18px;
+      border-radius: 0 0 10px 10px;
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: top .15s ease;
     }
-    .filterHint {
-      font-size: 12px;
-      color: #666;
-      margin: 0 0 6px 2px;
+    .skip-link:focus { top: 0; outline: 3px solid #fff; outline-offset: 2px; }
+
+    /* Acessibilidade: foco visível global */
+    :focus-visible {
+      outline: 3px solid var(--brand);
+      outline-offset: 2px;
+      border-radius: 4px;
+      box-shadow: 0 0 0 5px rgba(47,111,95,.14);
     }
 
-    .tableWrap{
-      margin-top: 8px;
-      border:1px solid #eee;
-      border-radius:12px;
-      overflow:hidden;
-      background:#fff;
+    /* Foco dentro do footer do card (fundo branco — anel simples basta) */
+    .card-link:focus-visible {
+      outline: 2px solid var(--brand);
+      outline-offset: -2px;
+      box-shadow: none;
+      border-radius: 0;
+      background: var(--brand-light);
     }
-    .table-scroll{ width: 100%; overflow-x: auto; }
-    .tbl{
-      width: 100%;
-      border-collapse: collapse;
-      table-layout: fixed;
-      min-width: 1100px;
+
+    /* Classe utilitária para leitores de tela */
+    .sr-only {
+      position: absolute;
+      width: 1px; height: 1px;
+      padding: 0; margin: -1px;
+      overflow: hidden;
+      clip: rect(0,0,0,0);
+      white-space: nowrap;
+      border: 0;
     }
-    .tbl th, .tbl td{
-      border-bottom:1px solid #eee;
-      padding:10px 10px;
-      font-size:13px;
-      line-height:1.25;
-      vertical-align: middle;
-    }
-    .tbl thead th{
-      font-weight:700;
-      background:#fbfbfb;
+
+    /* ══════════════════════════════════
+       HEADER INSTITUCIONAL
+    ══════════════════════════════════ */
+    .site-header {
+      background: var(--header-bg);
+      color: #fff;
       position: sticky;
       top: 0;
-      z-index: 2;
-      text-align: center;
-      white-space: nowrap;
-    }
-    .tbl tbody tr:nth-child(even) td { background:#fafafa; }
-    .tbl tbody tr:hover td { background:#f1f5ff; }
-
-    .tbl tbody td { text-align:center; white-space: nowrap; }
-
-    .tbl thead th:nth-child(3),
-    .tbl tbody td:nth-child(3){ text-align:left; white-space: normal; }
-
-    .tbl thead th:nth-child(10),
-    .tbl tbody td:nth-child(10){ white-space: normal; word-break: break-word; }
-
-    .detailsRow td{ background:#fff; }
-    .detailsBox{
-      border:1px solid #eee;
-      border-radius:10px;
-      padding:10px;
-      background:#fff;
-      text-align:left;
-    }
-    .kv{ display:grid; grid-template-columns:140px 1fr; gap:6px 10px; margin-bottom:8px; }
-    .k{ color:#444; font-weight:700; }
-    .v{ color:#111; }
-    details{ margin-top:8px; }
-    summary{ cursor:pointer; font-weight:700; }
-    ul{ margin:6px 0 18px; padding-left: 18px; }
-    li{ margin:4px 0; }
-    .muted{ color:#888; }
-
-    @media (max-width: 980px){
-      .layout{ flex-direction: column; }
-      .sidebar{ width: auto; position: relative; top: 0; }
+      z-index: 10;
+      box-shadow: 0 2px 8px rgba(0,0,0,.18);
     }
 
-    /* Rodapé institucional */
-    .site-footer {
+    .header-inner {
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: nowrap;
+    }
+
+    /* Logos */
+    .logos {
+      display: flex;
+      flex-direction: row;
+      gap: 8px;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .logo {
+      width: 58px;
+      height: 58px;
+      border-radius: 10px;
       background: #fff;
-      color: #333;
-      margin-top: auto;
-      padding: 28px 18px 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      flex-shrink: 0;
+      padding: 5px;
+      color: var(--brand-dark);
+      font-weight: 700;
+      font-size: 11px;
+      text-align: center;
+      border: 1px solid rgba(255,255,255,.22);
     }
+
+    .logo img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+
+    /* Título */
+    .header-title {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .header-title .t1 {
+      font-weight: 700;
+      font-size: 16.5px;
+      letter-spacing: .1px;
+      line-height: 1.3;
+    }
+
+    .header-title .t2 {
+      font-size: 12px;
+      font-weight: 700;
+      opacity: .82;
+      margin-top: 3px;
+      line-height: 1.45;
+    }
+
+    /* Badge de contagem */
+    .header-count {
+      background: rgba(255,255,255,.16);
+      border: 1px solid rgba(255,255,255,.22);
+      padding: 5px 13px;
+      border-radius: 999px;
+      font-size: 12.5px;
+      font-weight: 600;
+      white-space: nowrap;
+      letter-spacing: .1px;
+    }
+
+    /* ══════════════════════════════════
+       LAYOUT PRINCIPAL
+    ══════════════════════════════════ */
+    .page-main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 28px 16px 48px;
+      flex: 1;
+      width: 100%;
+    }
+
+    /* ── Controles de busca ─────────── */
+    .controls-bar {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 22px 24px;
+      margin-bottom: 22px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.03);
+    }
+
+    .controls-bar h1 {
+      margin: 0 0 5px;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--ink);
+      line-height: 1.3;
+    }
+
+    .controls-bar p {
+      margin: 0 0 18px;
+      color: var(--muted);
+      font-size: 13.5px;
+      line-height: 1.55;
+    }
+
+    .search-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .filter-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-top: 10px;
+    }
+
+    /* Wrapper do input com ícone */
+    .search-wrap {
+      position: relative;
+      flex: 1;
+      min-width: 240px;
+    }
+
+    .search-wrap .search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      pointer-events: none;
+      display: flex;
+    }
+
+    .search-wrap input[type="search"] {
+      width: 100%;
+      padding: 10px 12px 10px 38px;
+      border-radius: 10px;
+      border: 1.5px solid var(--line);
+      background: var(--line-light);
+      font-size: 14px;
+      color: var(--ink);
+      transition: border-color .18s, background .18s, box-shadow .18s;
+      /* remove default search decoration em WebKit */
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    .search-wrap input[type="search"]::-webkit-search-cancel-button {
+      -webkit-appearance: none;
+    }
+
+    .search-wrap input[type="search"]:focus {
+      outline: none;
+      border-color: var(--brand);
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(47,111,95,.12);
+    }
+
+    select {
+      padding: 10px 36px 10px 12px;
+      border-radius: 10px;
+      border: 1.5px solid var(--line);
+      background: var(--line-light);
+      font-size: 14px;
+      color: var(--ink);
+      min-width: 155px;
+      cursor: pointer;
+      transition: border-color .18s, box-shadow .18s;
+      -webkit-appearance: none;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235c7970' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+    }
+
+    select:focus {
+      outline: none;
+      border-color: var(--brand);
+      box-shadow: 0 0 0 3px rgba(47,111,95,.12);
+    }
+
+    /* ── Botão voltar (vive no header) ── */
+    .btn-voltar {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      border: 1.5px solid rgba(255,255,255,.45);
+      background: transparent;
+      color: #fff;
+      font-size: 12.5px;
+      font-weight: 600;
+      text-decoration: none;
+      white-space: nowrap;
+      flex-shrink: 0;
+      transition: background .18s ease, border-color .18s ease;
+    }
+
+    .btn-voltar:hover {
+      background: rgba(255,255,255,.14);
+      border-color: rgba(255,255,255,.75);
+      text-decoration: none;
+    }
+
+    /* ══════════════════════════════════
+       LISTA DE CARDS
+    ══════════════════════════════════ */
+    .cards-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      transition: opacity .15s ease;
+    }
+
+    .cards-list.searching {
+      opacity: .5;
+    }
+
+    /* ── Card ───────────────────────── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-left: 4px solid var(--line);
+      border-radius: 16px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: transform .22s ease, box-shadow .22s ease, border-left-color .22s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      border-left-color: var(--brand);
+      box-shadow: 0 8px 28px rgba(30,84,68,.09);
+    }
+
+    /* grade: foto | conteúdo */
+    .card-body {
+      display: grid;
+      grid-template-columns: 132px 1fr;
+    }
+
+    /* ── Coluna da foto ─────────────── */
+    .card-photo-col {
+      padding: 22px 0 22px 22px;
+    }
+
+    .card-photo {
+      width: 106px;
+      height: 136px;
+      border-radius: 12px;
+      overflow: hidden;
+      background: var(--brand-light);
+      border: 1px solid var(--line);
+      position: relative;
+    }
+
+    .card-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: top center;
+      display: block;
+      transition: transform .36s ease;
+      will-change: transform;
+    }
+
+    .card:hover .card-photo img {
+      transform: scale(1.04);
+    }
+
+    .foto-placeholder {
+      display: none;
+      width: 100%;
+      height: 100%;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 6px;
+      background: var(--brand-light);
+      color: var(--muted);
+      font-size: 10px;
+      text-align: center;
+      padding: 8px;
+    }
+
+    /* ── Coluna de conteúdo ─────────── */
+    .card-content {
+      padding: 22px 24px 20px 18px;
+      display: flex;
+      flex-direction: column;
+      min-width: 0; /* evita overflow em nomes longos */
+    }
+
+    .card-name {
+      margin: 0 0 5px;
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--ink);
+      line-height: 1.35;
+    }
+
+    .card-formacao {
+      margin: 0 0 3px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--ink);
+      line-height: 1.35;
+    }
+
+    .card-titulacao {
+      margin: 0 0 16px;
+      font-size: 12.5px;
+      color: var(--muted);
+      font-style: italic;
+      line-height: 1.45;
+    }
+
+    /* Badge de diretoria — retangular, não pill */
+    .card-diretoria {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 7px;
+      background: var(--dir-bg);
+      border: 1px solid var(--dir-bd);
+      color: var(--dir-tx);
+      font-size: 11.5px;
+      font-weight: 600;
+      margin-bottom: 18px;
+      width: fit-content;
+      max-width: 100%;
+      line-height: 1.35;
+    }
+
+    .card-diretoria svg {
+      flex-shrink: 0;
+      opacity: .7;
+    }
+
+    /* Linhas de pesquisa */
+    .card-linhas {
+      margin-top: 0;
+      padding-top: 14px;
+      border-top: 1px solid var(--line-light);
+    }
+
+    .card-linhas-label {
+      font-size: 10.5px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      margin-bottom: 7px;
+    }
+
+    .card-linhas ul {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .card-linhas ul li {
+      font-size: 13px;
+      color: #1e4a3c;
+      line-height: 1.5;
+      margin-bottom: 3px;
+      padding-left: 14px;
+      position: relative;
+    }
+
+    .card-linhas ul li::before {
+      content: "›";
+      position: absolute;
+      left: 0;
+      color: var(--brand);
+      font-weight: 700;
+      line-height: 1.5;
+    }
+
+    /* ── Rodapé do card (contatos) ──── */
+    .card-footer {
+      display: flex;
+      border-top: 1px solid var(--line);
+      margin-top: 18px;
+    }
+
+    .card-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 11px 16px;
+      font-size: 12.5px;
+      color: var(--brand-dark);
+      text-decoration: none;
+      font-weight: 600;
+      border-right: 1px solid var(--line);
+      transition: background .15s ease, color .15s ease;
+      flex-shrink: 0;
+    }
+
+    .card-link:last-child {
+      border-right: none;
+    }
+
+    .card-link:hover {
+      background: var(--brand-light);
+      text-decoration: none;
+    }
+
+    .card-link svg {
+      flex-shrink: 0;
+      opacity: .7;
+    }
+
+    /* ══════════════════════════════════
+       EMPTY STATE
+    ══════════════════════════════════ */
+    .empty-state {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 52px 24px;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .empty-state svg {
+      margin-bottom: 18px;
+      opacity: .3;
+    }
+
+    .empty-state strong {
+      display: block;
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--ink);
+      margin-bottom: 6px;
+    }
+
+    .empty-state p {
+      margin: 0;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* ══════════════════════════════════
+       FOOTER INSTITUCIONAL
+    ══════════════════════════════════ */
+    .site-footer {
+      background: var(--header-bg);
+      color: #fff;
+      padding: 24px 20px 20px;
+      margin-top: auto;
+    }
+
     .site-footer-inner {
       max-width: 1100px;
       margin: 0 auto;
@@ -250,950 +579,670 @@
       flex-direction: column;
       align-items: center;
       text-align: center;
-      gap: 6px;
+      gap: 4px;
     }
-    .site-footer .footer-title {
-      font-size: 16px;
+
+    .footer-brand {
+      font-size: 14.5px;
       font-weight: 700;
-      letter-spacing: .3px;
-      margin-bottom: 4px;
+      letter-spacing: .2px;
+      margin-bottom: 10px;
     }
-    .site-footer p { margin: 0; font-size: 13px; opacity: .92; line-height: 1.6 }
-    .site-footer .footer-divider {
-      width: 60px;
+
+    .footer-divider {
+      width: 44px;
       height: 2px;
-      background: rgba(0,0,0,.15);
+      background: rgba(255,255,255,.28);
       border-radius: 2px;
-      margin: 10px 0;
+      margin-bottom: 10px;
+    }
+
+    .site-footer p {
+      margin: 0;
+      font-size: 12px;
+      opacity: .82;
+      line-height: 1.65;
+    }
+
+    /* ══════════════════════════════════
+       RESPONSIVO
+    ══════════════════════════════════ */
+
+    /* Tablet — proporciona foto levemente menor */
+    @media (max-width: 860px) {
+      .card-body          { grid-template-columns: 126px 1fr; }
+    }
+
+    /* Mobile — mantém 2 colunas, foto proporcionalmente maior */
+    @media (max-width: 680px) {
+      .header-inner       { padding: 10px 14px; gap: 10px; }
+      .logo               { width: 46px; height: 46px; }
+      .header-title .t1   { font-size: 14.5px; }
+      .header-title .t2   { display: none; }
+      .header-count       { font-size: 11.5px; padding: 4px 10px; }
+
+      .page-main          { padding: 16px 12px 36px; }
+      .controls-bar       { padding: 16px 18px; border-radius: 12px; }
+      .controls-bar h1    { font-size: 19px; }
+
+      /* 2 colunas mantidas: foto ocupa espaço proporcional */
+      .card-body {
+        grid-template-columns: 110px 1fr;
+      }
+
+      .card-photo-col {
+        padding: 18px 0 18px 16px;
+      }
+
+      .card-photo {
+        width: 94px;
+        height: 122px;
+      }
+
+      .card-content {
+        padding: 18px 14px 16px 14px;
+      }
+
+      .card-name          { font-size: 16px; }
+      .card-diretoria     { font-size: 11px; }
+      .card-link          { padding: 10px 12px; font-size: 12px; }
+    }
+
+    /* Mobile pequeno — proporções mais compactas */
+    @media (max-width: 420px) {
+      .search-wrap        { min-width: 100%; }
+
+      .card-body          { grid-template-columns: 96px 1fr; }
+
+      .card-photo-col     { padding: 16px 0 16px 14px; }
+
+      .card-photo {
+        width: 82px;
+        height: 106px;
+      }
+
+      .card-content       { padding: 16px 12px 14px 12px; }
+
+      .card-linhas ul li  { font-size: 12.5px; }
     }
   </style>
 </head>
-
 <body>
-  <header class="topbar">
-    <div class="brand">
-      <div class="brand-logos">
-        <img class="logo fvs" src="./assets/fvs-logo.png" alt="FVS-RCP" />
-        <img class="logo depi" src="./assets/logo_depi.jpeg" alt="DEPI - FVS-RCP" />
+
+  <a href="#main-content" class="skip-link">Ir para o conteúdo principal</a>
+
+  <!-- ═══════════════════════════════
+       HEADER
+  ═══════════════════════════════ -->
+  <header class="site-header" role="banner">
+    <div class="header-inner">
+
+      <div class="logos" aria-label="Logos institucionais">
+        <div class="logo">
+          <img src="logos/fvs-logo.png" alt="Logo FVS-RCP"
+               onerror="this.style.display='none'; this.parentElement.textContent='FVS-RCP';">
+        </div>
+        <div class="logo">
+          <img src="logos/logo_depi.png" alt="Logo DEPI"
+               onerror="this.style.display='none'; this.parentElement.textContent='DEPI';">
+        </div>
+        <div class="logo">
+          <img src="logos/Logo PAIC.jpg" alt="Logo PAIC FVS-RCP"
+               onerror="this.style.display='none'; this.parentElement.textContent='PAIC';">
+        </div>
       </div>
 
-      <div class="brand-text">
-        <div class="org">FVS-RCP • DEPI</div>
-        <h1 class="title">
-          <svg class="titleIcon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M7 12.5l2 2 5-5" stroke="#111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M7 4h10a2 2 0 0 1 2 2v14l-3-2-3 2-3-2-3 2-3-2V6a2 2 0 0 1 2-2z" stroke="#111" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          Controle de Acordos de Cooperação Técnica e Convênios
-        </h1>
-        <div class="subtitle">Painel de monitoramento de vigência e renovação</div>
+      <div class="header-title">
+        <div class="t1">FVS-RCP · DEPI · PAIC</div>
+        <div class="t2">Painel público — Pesquisadores vinculados ao PAIC/FVS-RCP</div>
       </div>
+
+      <div class="header-count" id="chipTotal" aria-live="polite" aria-atomic="true">
+        0 pesquisadores
+      </div>
+
+      <a href="#" class="btn-voltar" aria-label="Voltar ao PAIC">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+        Voltar ao PAIC
+      </a>
+
     </div>
   </header>
 
-  <div class="layout">
-    <aside class="sidebar">
-      <h4>Filtros</h4>
+  <!-- ═══════════════════════════════
+       MAIN
+  ═══════════════════════════════ -->
+  <main class="page-main" id="main-content">
 
-      <div class="field">
-        <div class="label">Ano de vencimento</div>
-        <select id="filterYear" class="select">
-          <option value="">Todos</option>
-        </select>
+    <!-- Controles -->
+    <section class="controls-bar" aria-label="Filtros e busca">
+      <h1>Pesquisadores PAIC/FVS-RCP</h1>
+      <p>
+        Consulte os pesquisadores vinculados ao Programa de Apoio à Iniciação Científica
+        da Fundação de Vigilância em Saúde do Amazonas – Dra. Rosemary Costa Pinto.
+      </p>
+
+      <div class="search-row" role="search">
+        <label class="search-wrap" aria-label="Campo de busca">
+          <span class="search-icon" aria-hidden="true">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2.2">
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+          </span>
+          <input id="q" type="search"
+                 placeholder="Buscar por nome, e-mail, lotação ou linha de pesquisa"
+                 aria-label="Buscar pesquisadores" />
+        </label>
+
+        <label>
+          <span class="sr-only">Ordenar por</span>
+          <select id="ord" aria-label="Ordenar resultados">
+            <option value="nome_asc">Nome (A–Z)</option>
+            <option value="nome_desc">Nome (Z–A)</option>
+          </select>
+        </label>
       </div>
 
-      <div class="field">
-        <div class="label">Tipo</div>
-        <select id="filterTipo" class="select">
-          <option value="">Todos</option>
-        </select>
+      <div class="filter-row">
+        <label>
+          <span class="sr-only">Filtrar por titulação</span>
+          <select id="filtroTitulacao" aria-label="Filtrar por titulação">
+            <option value="">Titulação (todas)</option>
+          </select>
+        </label>
+
+        <label>
+          <span class="sr-only">Filtrar por diretoria</span>
+          <select id="filtroDiretoria" aria-label="Filtrar por diretoria ou lotação">
+            <option value="">Diretoria (todas)</option>
+          </select>
+        </label>
       </div>
+    </section>
 
-      <div class="field">
-        <div class="label">Instituição</div>
-        <select id="filterInst" class="select">
-          <option value="">Todas</option>
-        </select>
-      </div>
+    <!-- Cards -->
+    <div class="cards-list" id="cards" role="list" aria-label="Lista de pesquisadores"></div>
 
-      <div class="field">
-        <div class="label">UF</div>
-        <select id="filterUF" class="select">
-          <option value="">Todas</option>
-        </select>
-      </div>
+  </main>
 
-      <div class="field">
-        <div class="label">Status</div>
-        <select id="filterStatus" class="select">
-          <option value="">Todos</option>
-          <option value="VIGENTE">VIGENTE</option>
-          <option value="ALERTA 180 DIAS">ATENÇÃO (61–180 dias)</option>
-          <option value="CRÍTICO 60 DIAS">CRÍTICO (≤60 dias)</option>
-          <option value="SEM DATA">SEM DATA</option>
-        </select>
-      </div>
-
-      <div class="field">
-        <button id="resetFilters" class="btn" style="width:100%;">Ver todos</button>
-      </div>
-
-      <div class="field">
-        <button id="btnConcluidos" class="btn" style="width:100%;">ACTs Concluídos</button>
-      </div>
-
-      <div id="filterHint" class="filterHint"></div>
-    </aside>
-
-    <main class="main">
-      <div class="cards">
-        <div class="card">
-          <div class="kpiLabel">Total</div>
-          <div class="value" id="kpi_total">—</div>
-        </div>
-        <div class="card kpi-green">
-          <div class="kpiLabel">Vigentes</div>
-          <div class="value" id="kpi_vigentes">—</div>
-        </div>
-        <div class="card kpi-amber">
-          <div class="kpiLabel">Atenção (61–180 dias)</div>
-          <div class="value" id="kpi_alerta">—</div>
-        </div>
-        <div class="card kpi-red">
-          <div class="kpiLabel">Crítico (≤60 dias)</div>
-          <div class="value" id="kpi_critico">—</div>
-        </div>
-      </div>
-
-      <div class="row">
-        <div class="panel">
-          <h3>Status de vigência</h3>
-          <div id="chart_status"></div>
-
-          <div class="legend-status">
-            <div class="item"><span class="box vig"></span><span>VIGENTE</span></div>
-            <div class="item"><span class="box alt"></span><span>ATENÇÃO (61–180 dias)</span></div>
-            <div class="item"><span class="box crit"></span><span>CRÍTICO (≤60 dias)</span></div>
-            <div class="item"><span class="box sem"></span><span>SEM DATA</span></div>
-          </div>
-        </div>
-
-        <div class="panel">
-          <h3>Vencimentos por mês</h3>
-
-          <div class="legend-risk">
-            <div class="item"><span class="box red"></span><span>&lt; 1 ano (crítico)</span></div>
-            <div class="item"><span class="box yellow"></span><span>1–2 anos (atenção)</span></div>
-            <div class="item"><span class="box green"></span><span>&gt; 2 anos (vigência confortável)</span></div>
-            <div class="item"><span class="box gray"></span><span>Sem data</span></div>
-          </div>
-
-          <div id="chart_venc"></div>
-        </div>
-      </div>
-
-      <div class="row" style="margin-top:14px;">
-        <div class="panel">
-          <h3>Mapa (parcerias por UF)</h3>
-          <div id="chart_map"></div>
-        </div>
-
-        <div class="panel">
-          <h3>Diretorias responsáveis (quantitativo)</h3>
-          <div id="chart_dir"></div>
-        </div>
-      </div>
-
-      <div class="panel" style="margin-top:14px;">
-        <h3>Instrumentos</h3>
-
-        <div class="legenda">
-          <strong>Legenda</strong><br>
-          <span><strong>ACT</strong> = Acordo de Cooperação Técnica</span><br>
-          <span><strong>Convênio</strong> = Convênio</span><br>
-          <span><strong>TC</strong> = Termo de Colaboração</span>
-        </div>
-
-        <details style="margin-top:10px;">
-          <summary class="btn" style="display:inline-block; user-select:none;">
-            Ver estrutura organizacional
-          </summary>
-
-          <div class="legenda" style="margin-top:10px; width:100%;">
-            <strong>Diretorias</strong><br>
-            <span><strong>DEPI</strong> – Diretoria de Ensino, Pesquisa e Inovação</span><br>
-            <span><strong>DVACD</strong> – Diretoria de Vigilância Ambiental e Controle de Doenças</span><br>
-            <span><strong>DVE</strong> – Diretoria de Vigilância Epidemiológica</span><br>
-            <span><strong>LACEN</strong> – Laboratório Público Central</span><br><br>
-
-            <strong>Gerências</strong><br>
-            <span><strong>GPAVS</strong> – Gerência de Pesquisa Aplicada a Vigilância em Saúde</span><br>
-            <span><strong>GRNB</strong> – Gerência de Riscos Não Biológicos</span><br>
-            <span><strong>GVDANT</strong> – Gerência de Vigilância de Doenças e Agravos Não Transmissíveis</span><br>
-            <span><strong>PECT</strong> – Programa Estadual de Controle da Tuberculose</span><br>
-            <span><strong>SGENTO</strong> – Subgerência de Entomologia</span><br>
-            <span><strong>SASS</strong> – Sala de Análise de Situação de Saúde</span>
-          </div>
-        </details>
-
-        <div class="toolbar">
-          <input id="search" placeholder="Buscar (identificação, instituição, processo, status...)" />
-        </div>
-
-        <div class="tableWrap">
-          <div class="table-scroll">
-            <table id="tbl" class="tbl">
-              <thead>
-                <tr>
-                  <th>Identificação</th>
-                  <th>Tipo</th>
-                  <th>Instituição</th>
-                  <th>Diretoria</th>
-                  <th>Gerência</th>
-                  <th>Status</th>
-                  <th>Início</th>
-                  <th>Vencimento</th>
-                  <th>Aditivos</th>
-                  <th>Processo</th>
-                  <th>Detalhes</th>
-                </tr>
-              </thead>
-              <tbody id="tbody"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </main>
-  </div>
-
-  <footer class="site-footer">
+  <!-- ═══════════════════════════════
+       FOOTER
+  ═══════════════════════════════ -->
+  <footer class="site-footer" role="contentinfo">
     <div class="site-footer-inner">
-      <div class="footer-title">FVS-RCP • DEPI</div>
+      <div class="footer-brand">FVS-RCP · DEPI</div>
       <div class="footer-divider"></div>
       <p>Fundação de Vigilância em Saúde do Amazonas – Dra. Rosemary Costa Pinto (FVS-RCP)</p>
       <p>Diretoria de Ensino, Pesquisa e Inovação (DEPI)</p>
-      <p>Endereço: Avenida Torquato Tapajós, 4.010, Colônia Santo Antônio, CEP 69.093-018, Manaus – AM.</p>
+      <p>Av. Torquato Tapajós, 4.010, Colônia Santo Antônio, CEP 69.093-018, Manaus – AM</p>
     </div>
   </footer>
 
+  <!-- ═══════════════════════════════
+       SCRIPT
+  ═══════════════════════════════ -->
   <script>
-    // =========================
-    // AJUSTE AQUI
-    // =========================
-    const CSV_URL = "./data/tbl_instrumentos.csv";
-
-    // =========================
-    // Helpers
-    // =========================
-    function escapeHTML(s) {
-      return String(s ?? "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-    }
-
-    function getFirst(obj, keys) {
-      for (const k of keys) {
-        if (obj && obj[k] !== undefined && obj[k] !== null && String(obj[k]).trim() !== "") return obj[k];
+    /* Dados inline — garante renderização mesmo com falha de fetch
+       (mantidos em sincronia com pesquisadores.json) */
+    let PESQUISADORES = [
+      {
+        "nome": "Augusto Kluczkovski Junior",
+        "foto": "augusto_kluczkovski.jpg",
+        "lattes": "https://lattes.cnpq.br/8360371070839162",
+        "email": "augustokjr@hotmail.com",
+        "formacao_base": "Médico Veterinário",
+        "descricao_titulacao": "Doutor(a) em Ciência de Alimentos",
+        "diretoria_lotacao": "Laboratório Central de Saúde Pública - LACEN",
+        "linhas": [
+          "Vigilância ambiental e avaliação de riscos em ecossistemas Amazônicos",
+          "Vigilância das doenças transmissíveis e não transmissíveis na Amazônia",
+          "Vigilância sanitária e segurança de produtos, serviços e ambientes reemergentes"
+        ]
+      },
+      {
+        "nome": "Bruno Fontenele Vidal",
+        "foto": "bruno_fontenele.jpg",
+        "lattes": "https://buscatextual.cnpq.br/buscatextual/visualizacv.do?id=K8390450P1",
+        "email": "vidal.parasito@gmail.com",
+        "formacao_base": "Farmacêutico-Bioquímico",
+        "descricao_titulacao": "Mestre em Microbiologia Médica Humana",
+        "diretoria_lotacao": "Laboratório Central de Saúde Pública - LACEN",
+        "linhas": [
+          "Vigilância das doenças transmissíveis e não transmissíveis na Amazônia"
+        ]
+      },
+      {
+        "nome": "Claudio Fernández Araujo",
+        "foto": "claudio_fernandez.jpg",
+        "lattes": "https://lattes.cnpq.br/0172847247247777",
+        "email": "claudiofernandez.br@gmail.com",
+        "formacao_base": "Farmacêutico-Bioquímico",
+        "descricao_titulacao": "Doutor(a) em Ciências",
+        "diretoria_lotacao": "Laboratório Central de Saúde Pública - LACEN",
+        "linhas": [
+          "Vigilância das doenças transmissíveis e não transmissíveis na Amazônia",
+          "Vigilância sanitária e segurança de produtos, serviços e ambientes reemergentes"
+        ]
+      },
+      {
+        "nome": "Elder Augusto Guimarães Figueira",
+        "foto": "elder_augusto.jpg",
+        "lattes": "https://lattes.cnpq.br/4262077800101820",
+        "email": "dva.fvs@gmail.com",
+        "formacao_base": "Biólogo",
+        "descricao_titulacao": "Doutor(a) em Medicina Tropical",
+        "diretoria_lotacao": "Diretoria de Vigilância Ambiental e Controle - DVACD",
+        "linhas": [
+          "Vigilância ambiental e avaliação de riscos em ecossistemas Amazônicos",
+          "Vigilância das doenças transmissíveis e não transmissíveis na Amazônia"
+        ]
+      },
+      {
+        "nome": "Erian de Almeida Santos",
+        "foto": "erian_de.jpg",
+        "lattes": "https://lattes.cnpq.br/1211413946245595",
+        "email": "eriansantos.bio@gmail.com",
+        "formacao_base": "Biólogo",
+        "descricao_titulacao": "Doutor(a) em Biologia de Agentes Infecciosos e Parasitários",
+        "diretoria_lotacao": "Diretoria de Planejamento, Emergências em Saúde Pública e Ações Estratégicas - DIPLAE",
+        "linhas": [
+          "Vigilância das doenças transmissíveis e não transmissíveis na Amazônia",
+          "Gestão do trabalho e educação em vigilância em saúde"
+        ]
+      },
+      {
+        "nome": "Lara Bezerra de Oliveira de Assis",
+        "foto": "lara_bezerra.jpg",
+        "lattes": "https://lattes.cnpq.br/9609810837365337",
+        "email": "Larabezerradeassis@gmail.com",
+        "formacao_base": "Enfermeira",
+        "descricao_titulacao": "Mestre em Enfermagem e Saúde Pública",
+        "diretoria_lotacao": "Departamento de Vigilância Epidemiológica - DVE",
+        "linhas": [
+          "Gestão do trabalho e educação em vigilância em saúde",
+          "Vigilância das doenças transmissíveis e não transmissíveis na Amazônia"
+        ]
+      },
+      {
+        "nome": "Layssa do Carmo Barroso",
+        "foto": "layssa_do.jpg",
+        "lattes": "https://lattes.cnpq.br/6712793753461951",
+        "email": "biomedlayssa@gmail.com",
+        "formacao_base": "Farmacêutica-Bioquímica",
+        "descricao_titulacao": "Mestre em Saúde Pública",
+        "diretoria_lotacao": "Diretoria de Ensino, Pesquisa e Inovação - DEPI",
+        "linhas": [
+          "Vigilância ambiental e avaliação de riscos em ecossistemas Amazônicos",
+          "Vigilância das doenças transmissíveis e não transmissíveis na Amazônia"
+        ]
+      },
+      {
+        "nome": "Leíse Gomes Fernandes",
+        "foto": "leise_gomes.jpg",
+        "lattes": "https://lattes.cnpq.br/7432377557342964",
+        "email": "leisegfernandes@gmail.com",
+        "formacao_base": "Médica Veterinária",
+        "descricao_titulacao": "Doutor(a) em Medicina veterinária",
+        "diretoria_lotacao": "Diretora Presidente - DIPRE",
+        "linhas": [
+          "Vigilância das doenças transmissíveis e não transmissíveis na Amazônia"
+        ]
+      },
+      {
+        "nome": "Lisele Maria Brasileiro Martins",
+        "foto": "lisele_maria.jpg",
+        "lattes": "https://lattes.cnpq.br/7255915736643919",
+        "email": "liselebrasileiro@hotmail.com",
+        "formacao_base": "Farmacêutica-Bioquímica",
+        "descricao_titulacao": "Mestre em Doenças Tropicais e Infecciosas",
+        "diretoria_lotacao": "Laboratório Central de Saúde Pública - LACEN",
+        "linhas": [
+          "Vigilância das doenças transmissíveis e não transmissíveis na Amazônia"
+        ]
+      },
+      {
+        "nome": "Rejane Simões",
+        "foto": "rejane_simoes.jpg",
+        "lattes": "https://lattes.cnpq.br/6804861698877929",
+        "email": "simoes.rej@gmail.com",
+        "formacao_base": "Bióloga",
+        "descricao_titulacao": "Doutor(a) em Biotecnologia na Área da Saúde",
+        "diretoria_lotacao": "Diretoria de Vigilância Ambiental e Controle - DVACD",
+        "linhas": [
+          "Vigilância ambiental e avaliação de riscos em ecossistemas Amazônicos"
+        ]
+      },
+      {
+        "nome": "Rildo Mendes de Lima",
+        "foto": "rildo_mendes.jpg",
+        "lattes": "https://lattes.cnpq.br/1066014948975873",
+        "email": "lacenam.bacteriologia@gmail.com",
+        "formacao_base": "Farmacêutico Bioquímico",
+        "descricao_titulacao": "Mestre em Ciências Farmacêuticas",
+        "diretoria_lotacao": "Laboratório Central de Saúde Pública - LACEN",
+        "linhas": [
+          "Vigilância das doenças transmissíveis e não transmissíveis na Amazônia"
+        ]
+      },
+      {
+        "nome": "Samyly Coutinho de Aguiar Silva",
+        "foto": "samyly_coutinho.jpg",
+        "lattes": "https://lattes.cnpq.br/9569322109706289",
+        "email": "samylyvigep@gmail.com",
+        "formacao_base": "Enfermeira",
+        "descricao_titulacao": "Mestre em Saúde Pública",
+        "diretoria_lotacao": "Departamento de Vigilância Epidemiológica - DVE",
+        "linhas": [
+          "Vigilância das doenças transmissíveis e não transmissíveis na Amazônia"
+        ]
+      },
+      {
+        "nome": "Tatiana Amaral Pires de Almeida",
+        "foto": "tatiana_amaral.jpg",
+        "lattes": "https://lattes.cnpq.br/5101284940115601",
+        "email": "tatiapires@gmail.com",
+        "formacao_base": "Biomédica",
+        "descricao_titulacao": "Doutor(a) em Ciências da Saúde",
+        "diretoria_lotacao": "Laboratório Central de Saúde Pública - LACEN",
+        "linhas": [
+          "Vigilância das doenças transmissíveis e não transmissíveis na Amazônia"
+        ]
+      },
+      {
+        "nome": "Wagner Cosme Morhy Terrazas",
+        "foto": "wagner_terrazas.jpg",
+        "lattes": "https://lattes.cnpq.br/6924845678480098",
+        "email": "wagner.terrazas@gmail.com",
+        "formacao_base": "Sanitarista",
+        "descricao_titulacao": "Mestre em Saúde Pública",
+        "diretoria_lotacao": "Diretora Presidente – DIPRE",
+        "linhas": [
+          "Vigilância ambiental e avaliação de riscos em ecossistemas Amazônicos",
+          "Vigilância das doenças transmissíveis e não transmissíveis na Amazônia"
+        ]
+      },
+      {
+        "nome": "Walter Oliva Pinto Filho Segundo",
+        "foto": "walter_oliva.jpg",
+        "lattes": "https://lattes.cnpq.br/6107223379547943",
+        "email": "walterolivafvs@gmail.com",
+        "formacao_base": "Biólogo",
+        "descricao_titulacao": "Doutor(a) em Biodiversidade e Biotecnologia",
+        "diretoria_lotacao": "Diretoria de Ensino, Pesquisa e Inovação - DEPI",
+        "linhas": [
+          "Vigilância ambiental e avaliação de riscos em ecossistemas Amazônicos",
+          "Vigilância das doenças transmissíveis e não transmissíveis na Amazônia"
+        ]
+      },
+      {
+        "nome": "Jair dos Santos Pinheiro",
+        "foto": "jair_pinheiro.jpg",
+        "lattes": "https://lattes.cnpq.br/9843437860851297",
+        "email": "jpsantos.jair@gmail.com",
+        "formacao_base": "Enfermeiro",
+        "descricao_titulacao": "Mestre em Enfermagem",
+        "diretoria_lotacao": "Diretora Presidente - DIPRE",
+        "linhas": [
+          "Gestão do trabalho e educação em vigilância em saúde",
+          "Vigilância das doenças transmissíveis e não transmissíveis na Amazônia"
+        ]
+      },
+      {
+        "nome": "Fabiana Bianchet",
+        "foto": "fabiana_bianchet.jpg",
+        "lattes": "https://lattes.cnpq.br/3322590851570635",
+        "email": "fabianabianchet@gmail.com",
+        "formacao_base": "Enfermeira",
+        "descricao_titulacao": "Mestre em Saúde e Gestão do Trabalho",
+        "diretoria_lotacao": "Diretoria de Vigilância Hospitalar e Qualidade - DVHQ",
+        "linhas": [
+          "Gestão do trabalho e educação em vigilância em saúde",
+          "Vigilância das doenças transmissíveis e não transmissíveis na Amazônia"
+        ]
       }
-      return "";
-    }
+    ];
 
-    function norm(s) {
-      return String(s || "").toLowerCase().trim().replace(/\./g, "");
-    }
-
-    function parseDateAny(raw) {
-      if (!raw) return null;
-      if (raw instanceof Date && !isNaN(raw)) return raw;
-
-      const s = String(raw).trim().slice(0, 10);
-
-      let m = s.match(/^(\d{2})[\/\-](\d{2})[\/\-](\d{4})$/);
-      if (m) {
-        const dd = Number(m[1]), mm = Number(m[2]), yy = Number(m[3]);
-        const d = new Date(yy, mm - 1, dd);
-        return isNaN(d) ? null : d;
-      }
-
-      m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-      if (m) {
-        const yy = Number(m[1]), mm = Number(m[2]), dd = Number(m[3]);
-        const d = new Date(yy, mm - 1, dd);
-        return isNaN(d) ? null : d;
-      }
-
-      const d2 = new Date(s);
-      return isNaN(d2) ? null : d2;
-    }
-
-    function formatDateBR(raw) {
-      const d = parseDateAny(raw);
-      if (!d) return "";
-      const dd = String(d.getDate()).padStart(2, "0");
-      const mm = String(d.getMonth() + 1).padStart(2, "0");
-      const yy = d.getFullYear();
-      return `${dd}/${mm}/${yy}`;
-    }
-
-    function monthLabelFromDate(d) {
-      return norm(d.toLocaleString("pt-BR", { month: "short", year: "numeric" }));
-    }
-
-    function splitBullets(text) {
-      if (!text) return [];
-      const s = String(text).trim();
-      if (!s) return [];
-      return s.replace(/\r/g, "").split(/\n|•|;|\|/).map(x => x.trim()).filter(Boolean);
-    }
-
-    function makeUl(items) {
-      if (!items || !items.length) return `<div class="muted">—</div>`;
-      return `<ul>${items.map(i => `<li>${escapeHTML(i)}</li>`).join("")}</ul>`;
-    }
-
-    function getUF(r) {
-      const ufRaw = getFirst(r, ["uf","UF","estado_uf","uf_parceiro"]);
-      const uf = String(ufRaw || "").trim().toUpperCase();
-      return /^[A-Z]{2}$/.test(uf) ? uf : "";
-    }
-
-    function isArquivado(r) {
-      const raw = String(getFirst(r, ["arquivado","Arquivado","status_geral","Status Geral","status"]) || "")
-        .trim().toUpperCase();
-      return raw === "SIM" || raw === "S" || raw === "1" || raw === "TRUE" || raw.includes("ARQUIV");
-    }
-
-    function computeStatus(r) {
-      if (isArquivado(r)) return "ARQUIVADO";
-
-      const stat = String(getFirst(r, ["status_vigencia","status_vencimento","Status","status"]) || "").toUpperCase();
-      if (stat.includes("SEM DATA") || stat.includes("SEMDATA")) return "SEM DATA";
-      if (stat.includes("ALERTA")) return "ALERTA 180 DIAS";
-      if (stat.includes("VIGENTE")) return "VIGENTE";
-
-      const rawVenc = getFirst(r, ["vigencia_termino","VIGÊNCIA - TÉRMINO","vencimento","Vencimento","vigencia_fim"]);
-      const d = parseDateAny(rawVenc);
-      if (!d) return "SEM DATA";
-
-      const diffDays = Math.ceil((d - new Date()) / (1000*60*60*24));
-      if (diffDays <= 60)  return "CRÍTICO 60 DIAS";
-      if (diffDays <= 180) return "ALERTA 180 DIAS";
-      return "VIGENTE";
-    }
-
-    function riskColorByDate(d) {
-      const now = new Date();
-      const diffDays = (d - now) / (1000*60*60*24);
-      const diffYears = diffDays / 365.25;
-      if (diffYears < 1) return "#d62c26";
-      if (diffYears <= 2) return "#f59e0b";
-      return "#16a34a";
-    }
-
-    // ✅ ACTs concluídos (pelo status_execucao do CSV)
-    function isConcluido(row) {
-      const exec = String(getFirst(row, [
-        "status_execucao",
-        "status_execução",
-        "situacao_execucao",
-        "situação_execucao",
-        "andamento",
-        "execucao",
-        "execução"
-      ]) || "").trim().toUpperCase();
-
-      return exec.includes("CONCL") || exec.includes("FINALIZ");
-    }
-
-    // =========================
-    // Estado
-    // =========================
-    let tbl = [];
-    let activeMonth = null;
-    let showOnlyConcluidos = false;
-
-    // =========================
-    // Elementos
-    // =========================
-    const searchEl = document.getElementById("search");
-    const resetBtnEl = document.getElementById("resetFilters");
-    const btnConcluidosEl = document.getElementById("btnConcluidos");
-    const hintEl = document.getElementById("filterHint");
-
-    const filterYearEl = document.getElementById("filterYear");
-    const filterTipoEl = document.getElementById("filterTipo");
-    const filterStatusEl = document.getElementById("filterStatus");
-    const filterInstEl = document.getElementById("filterInst");
-    const filterUFEl = document.getElementById("filterUF");
-
-    const tbodyEl = document.getElementById("tbody");
-
-    const kpi_total = document.getElementById("kpi_total");
-    const kpi_vigentes = document.getElementById("kpi_vigentes");
-    const kpi_alerta = document.getElementById("kpi_alerta");
-    const kpi_critico = document.getElementById("kpi_critico");
-
-    // =========================
-    // Filtros (populate)
-    // =========================
-    function populateFilterOptions(rows) {
-      const years = new Set();
-      rows.forEach(r => {
-        const rawV = getFirst(r, ["vigencia_termino","VIGÊNCIA - TÉRMINO","vencimento","Vencimento","vigencia_fim"]);
-        const d = parseDateAny(rawV);
-        if (d) years.add(String(d.getFullYear()));
+    /* ── Utilitários XSS ─────────────── */
+    function escapeHtml(s) {
+      return (s || "").replace(/[&<>"']/g, function(c) {
+        return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c];
       });
-      const yearsSorted = Array.from(years).sort((a,b) => Number(a) - Number(b));
-      filterYearEl.innerHTML =
-        `<option value="">Todos</option>` +
-        yearsSorted.map(y => `<option value="${y}">${y}</option>`).join("");
-
-      const tipos = new Set();
-      rows.forEach(r => {
-        const t = String(getFirst(r, ["tipo_instrumento","Tipo","tipo"]) || "").trim();
-        if (t) tipos.add(t);
-      });
-      const tiposSorted = Array.from(tipos).sort((a,b) => a.localeCompare(b, "pt-BR"));
-      filterTipoEl.innerHTML =
-        `<option value="">Todos</option>` +
-        tiposSorted.map(t => `<option value="${escapeHTML(t)}">${escapeHTML(t)}</option>`).join("");
-
-      const insts = new Set();
-      rows.forEach(r => {
-        const inst = String(getFirst(r, ["instituicao_parceira","instituicao","Instituição","instituicao_parceira_nome"]) || "").trim();
-        if (inst) insts.add(inst);
-      });
-      const instsSorted = Array.from(insts).sort((a,b) => a.localeCompare(b, "pt-BR"));
-      filterInstEl.innerHTML =
-        `<option value="">Todas</option>` +
-        instsSorted.map(i => `<option value="${escapeHTML(i)}">${escapeHTML(i)}</option>`).join("");
-
-      const ufs = new Set();
-      rows.forEach(r => {
-        const uf = getUF(r);
-        if (uf) ufs.add(uf);
-      });
-      const ufsSorted = Array.from(ufs).sort((a,b) => a.localeCompare(b, "pt-BR"));
-      filterUFEl.innerHTML =
-        `<option value="">Todas</option>` +
-        ufsSorted.map(uf => `<option value="${uf}">${uf}</option>`).join("");
     }
 
-    // =========================
-    // Render Tabela
-    // =========================
-    function render(rows) {
-      tbodyEl.innerHTML = "";
+    function escapeAttr(s) {
+      return (s || "").replace(/"/g, "&quot;");
+    }
 
-      rows.forEach((r) => {
-        const ident = getFirst(r, ["identificacao","Identificação","id_instrumento","ID"]);
-        const inst  = getFirst(r, ["instituicao_parceira","instituicao","Instituição","instituicao_parceira_nome"]);
-        const tipo  = getFirst(r, ["tipo_instrumento","Tipo","tipo"]);
-        const proc  = getFirst(r, ["numero_processo","Processo","processo"]);
+    /* ── Seletores ───────────────────── */
+    var $ = function(id) { return document.getElementById(id); };
 
-        const inicio = formatDateBR(getFirst(r, ["vigencia_inicio","VIGÊNCIA - INÍCIO","inicio","Inicio"]));
-        const venc   = formatDateBR(getFirst(r, ["vigencia_termino","VIGÊNCIA - TÉRMINO","vencimento","Vencimento","vigencia_fim"]));
+    /* ── Classifica titulação em categoria ── */
+    var TITULACAO_ORDEM = ["Pós-Doutorado","Doutorado","Mestrado","Especialização","Residência","Graduação"];
 
-        const stat  = computeStatus(r);
-        const diretoria = getFirst(r, ["diretoria_responsavel", "Diretoria", "setor_lotacao", "Setor", "setor"]);
-        const gerencia  = getFirst(r, ["gerencia_responsavel", "Gerência", "gerencia"]);
+    function categoriaTitulacao(descricao) {
+      var d = (descricao || "").toLowerCase();
+      if (d.includes("pós-doc") || d.includes("pos-doc") || d.includes("pós doc")) return "Pós-Doutorado";
+      if (d.includes("doutor"))       return "Doutorado";
+      if (d.includes("mestre") || d.includes("mestrado")) return "Mestrado";
+      if (d.includes("especializa"))  return "Especialização";
+      if (d.includes("residência") || d.includes("residencia")) return "Residência";
+      if (d.includes("graduação") || d.includes("graduacao"))   return "Graduação";
+      return null;
+    }
 
-        const possuiAditivoRaw = getFirst(r, ["possui_aditivo","aditivo","Aditivo"]);
-        const qtdAditivosRaw   = getFirst(r, ["quantos_aditivos","Qtd Aditivos","qtd_aditivos"]);
-        const possuiAditivo = (possuiAditivoRaw ? String(possuiAditivoRaw) : "").trim().toUpperCase();
-        const qtdAditivos   = (qtdAditivosRaw ? String(qtdAditivosRaw) : "").trim();
+    /* ── Filtro + ordenação ──────────── */
+    function getFiltered() {
+      var q   = ($("q").value || "").trim().toLowerCase();
+      var tit = ($("filtroTitulacao").value || "").trim();
+      var dir = ($("filtroDiretoria").value || "").trim();
+      var ord = $("ord").value;
+      var arr = PESQUISADORES.slice();
 
-        let aditivosLabel = "NÃO";
-        if (["SIM","S","TRUE","1"].includes(possuiAditivo)) {
-          aditivosLabel = qtdAditivos ? `SIM (${qtdAditivos})` : "SIM";
-        } else if (["NÃO","NAO","N","FALSE","0",""].includes(possuiAditivo)) {
-          aditivosLabel = "NÃO";
-        } else if (possuiAditivoRaw) {
-          aditivosLabel = String(possuiAditivoRaw);
-        }
+      // Ordenação base A-Z (locale pt-BR)
+      arr.sort(function(a, b) {
+        return (a.nome || "").localeCompare(b.nome || "", "pt-BR");
+      });
 
-        const coordParceiro = getFirst(r, ["coordenador_parceiro","coord_parceiro","coordenador_parceiro_nome"]);
-        const respFvs       = getFirst(r, ["coordenador_fvsrcp","resp_fvs","responsavel_fvs"]);
-        const repasse       = getFirst(r, ["repasse_financeiro","repasse","valor_repasse"]);
-
-        const dtAss  = formatDateBR(getFirst(r, ["data_da_assinatura","Data da Assinatura","data_assinatura"]));
-
-        // ✅ "Publicação DOE" deve pegar o número do extrato (e também aceitar publicacao_doe)
-        const dtDoe = getFirst(r, [
-          "publicacao_doe", "Publicação DOE",
-          "numero_extrato_publicado", "numero_extrato_publicacao",
-          "extrato_publicacao", "Extrato (nº)", "extrato"
-        ]);
-
-        const linkDoe = getFirst(r, ["link_publicacao_doe","link_doe","publicacao_doe_link"]);
-        const estado = getFirst(r, ["estado","Estado"]);
-
-        const objetivoTexto = getFirst(r, ["objetivo_resumido","objetivo_geral","objeto","Objeto"]);
-        const produtosTexto = getFirst(r, ["produtos_gerados","produtos_gerados.1","produtos","Produtos"]);
-
-        const objetivoItens = splitBullets(objetivoTexto);
-        const produtosItens = splitBullets(produtosTexto);
-
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${escapeHTML(ident || "—")}</td>
-          <td>${escapeHTML(tipo || "—")}</td>
-          <td>${escapeHTML(inst || "—")}</td>
-          <td>${escapeHTML(diretoria || "—")}</td>
-          <td>${escapeHTML(gerencia || "—")}</td>
-          <td>${escapeHTML(stat || "—")}</td>
-          <td>${escapeHTML(inicio || "—")}</td>
-          <td>${escapeHTML(venc || "—")}</td>
-          <td>${escapeHTML(aditivosLabel || "NÃO")}</td>
-          <td>${escapeHTML(proc || "—")}</td>
-          <td><button class="btn js-toggle" type="button">▼</button></td>
-        `;
-        tbodyEl.appendChild(tr);
-
-        const trDetails = document.createElement("tr");
-        trDetails.className = "detailsRow";
-        trDetails.style.display = "none";
-        trDetails.innerHTML = `
-          <td colspan="11">
-            <div class="detailsBox">
-              <div class="kv">
-                <div class="k">Coord. parceiro:</div><div class="v">${escapeHTML(coordParceiro || "—")}</div>
-                <div class="k">Resp. FVS:</div><div class="v">${escapeHTML(respFvs || "—")}</div>
-                <div class="k">Repasse:</div><div class="v">${escapeHTML(repasse || "—")}</div>
-
-                <div class="k">Estado:</div><div class="v">${escapeHTML(estado || "—")}</div>
-
-                <div class="k">Assinatura:</div><div class="v">${escapeHTML(dtAss || "—")}</div>
-                <div class="k">Publicação DOE:</div><div class="v">${escapeHTML(dtDoe || "—")}</div>
-                <div class="k">Link DOE:</div>
-                <div class="v">${
-                  linkDoe
-                    ? `<a href="${escapeHTML(linkDoe)}" target="_blank" rel="noopener noreferrer">Abrir</a>`
-                    : "—"
-                }</div>
-              </div>
-
-              <details ${objetivoItens.length ? "open" : ""}>
-                <summary>Objetivo</summary>
-                ${makeUl(objetivoItens)}
-              </details>
-
-              <details>
-                <summary>Produtos</summary>
-                ${makeUl(produtosItens)}
-              </details>
-            </div>
-          </td>
-        `;
-        tbodyEl.appendChild(trDetails);
-
-        const btn = tr.querySelector(".js-toggle");
-        btn.addEventListener("click", () => {
-          const isOpen = trDetails.style.display !== "none";
-          trDetails.style.display = isOpen ? "none" : "table-row";
-          btn.textContent = isOpen ? "▼" : "▲";
+      if (q) {
+        arr = arr.filter(function(x) {
+          return (x.nome              || "").toLowerCase().includes(q) ||
+                 (x.email             || "").toLowerCase().includes(q) ||
+                 (x.formacao_base     || "").toLowerCase().includes(q) ||
+                 (x.descricao_titulacao || "").toLowerCase().includes(q) ||
+                 (x.diretoria_lotacao || "").toLowerCase().includes(q) ||
+                 (x.linhas            || []).join(" ").toLowerCase().includes(q);
         });
-      });
+      }
+
+      if (tit) {
+        arr = arr.filter(function(x) {
+          return categoriaTitulacao(x.descricao_titulacao) === tit;
+        });
+      }
+
+      if (dir) {
+        arr = arr.filter(function(x) {
+          return (x.diretoria_lotacao || "") === dir;
+        });
+      }
+
+      if (ord === "nome_desc") {
+        arr.sort(function(a, b) {
+          return (b.nome || "").localeCompare(a.nome || "", "pt-BR");
+        });
+      }
+
+      return arr;
     }
 
-    // =========================
-    // KPIs
-    // =========================
-    function updateKPIs(rows) {
-      const base = (rows || []).filter(r => computeStatus(r) !== "ARQUIVADO"); // arquivados não entram
-      let vig = 0, alt = 0, crit = 0;
-
-      base.forEach(r => {
-        const st = computeStatus(r);
-        if (st === "VIGENTE")       vig++;
-        if (st === "ALERTA 180 DIAS") alt++;
-        if (st === "CRÍTICO 60 DIAS") crit++;
+    /* ── Popula select de titulações ─── */
+    function populateTitulacaoFilter() {
+      var sel = $("filtroTitulacao");
+      var current = sel.value;
+      var presentes = [];
+      PESQUISADORES.forEach(function(x) {
+        var cat = categoriaTitulacao(x.descricao_titulacao);
+        if (cat && presentes.indexOf(cat) === -1) presentes.push(cat);
       });
-
-      kpi_total.textContent = String(base.length);
-      kpi_vigentes.textContent = String(vig);
-      kpi_alerta.textContent = String(alt);
-      kpi_critico.textContent = String(crit);
+      // Ordena pela hierarquia definida em TITULACAO_ORDEM
+      presentes.sort(function(a, b) {
+        return TITULACAO_ORDEM.indexOf(a) - TITULACAO_ORDEM.indexOf(b);
+      });
+      sel.innerHTML = '<option value="">Titulação (todas)</option>' +
+        presentes.map(function(cat) {
+          return '<option value="' + escapeAttr(cat) + '"' +
+            (cat === current ? ' selected' : '') + '>' + escapeHtml(cat) + '</option>';
+        }).join("");
     }
 
-    // =========================
-    // Gráficos
-    // =========================
-    function buildStatusDonut(rows) {
-      const base = (rows || []).filter(r => computeStatus(r) !== "ARQUIVADO");
-      const counts = { "VIGENTE": 0, "ALERTA 180 DIAS": 0, "CRÍTICO 60 DIAS": 0, "SEM DATA": 0 };
-      base.forEach(r => { counts[computeStatus(r)] = (counts[computeStatus(r)] || 0) + 1; });
-
-      Plotly.newPlot("chart_status", [{
-        type: "pie",
-        labels: ["VIGENTE", "ATENÇÃO (61–180 dias)", "CRÍTICO (≤60 dias)", "SEM DATA"],
-        values: [counts["VIGENTE"], counts["ALERTA 180 DIAS"], counts["CRÍTICO 60 DIAS"], counts["SEM DATA"]],
-        hole: 0.55,
-        textinfo: "value+percent",
-        texttemplate: "<b>%{value}</b><br>%{percent:.0%}",
-        textposition: "inside",
-        marker: { colors: ["#16a34a", "#f59e0b", "#d62c26", "#9ca3af"], line: { color: "#ffffff", width: 3 } },
-        sort: false,
-        showlegend: false
-      }], {
-        height: 320,
-        margin: { t: 10, r: 10, b: 10, l: 10 }
-      }, { displayModeBar:false, responsive:true });
+    /* ── Popula select de diretorias ─── */
+    function populateDiretoriaFilter() {
+      var sel = $("filtroDiretoria");
+      var current = sel.value;
+      var dirs = [];
+      PESQUISADORES.forEach(function(x) {
+        var d = (x.diretoria_lotacao || "").trim();
+        if (d && dirs.indexOf(d) === -1) dirs.push(d);
+      });
+      dirs.sort(function(a, b) { return a.localeCompare(b, "pt-BR"); });
+      sel.innerHTML = '<option value="">Diretoria (todas)</option>' +
+        dirs.map(function(d) {
+          return '<option value="' + escapeAttr(d) + '"' +
+            (d === current ? ' selected' : '') + '>' + escapeHtml(d) + '</option>';
+        }).join("");
     }
 
-    function buildVencBar(rows) {
-      const base = (rows || []).filter(r => computeStatus(r) !== "ARQUIVADO");
+    /* ── Renderização ────────────────── */
 
-      const monthMap = new Map();
-      base.forEach(r => {
-        const rawVenc = getFirst(r, ["vigencia_termino","VIGÊNCIA - TÉRMINO","vencimento","Vencimento","vigencia_fim"]);
-        const d = parseDateAny(rawVenc);
-        if (!d) return;
+    /* SVG inline reutilizáveis */
+    var ICON_BUILDING = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>';
+    var ICON_MAIL     = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>';
+    var ICON_LATTES   = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>';
+    var ICON_PERSON   = '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#9ab5ad" stroke-width="1.2" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>';
 
-        const key = monthLabelFromDate(d);
-        const prev = monthMap.get(key) || { count:0, color: riskColorByDate(d) };
-        prev.count += 1;
+    function render() {
+      var wrap = $("cards");
+      var arr  = getFiltered();
+      var n    = arr.length;
 
-        const c = riskColorByDate(d);
-        const priority = (hex) => hex === "#d62c26" ? 3 : (hex === "#f59e0b" ? 2 : 1);
-        if (priority(c) > priority(prev.color)) prev.color = c;
+      $("chipTotal").textContent = n + (n === 1 ? " pesquisador" : " pesquisadores");
 
-        monthMap.set(key, prev);
-      });
-
-      const months = Array.from(monthMap.keys()).sort((a,b) => {
-        const parseKey = (k) => {
-          const [mon, year] = k.split(" ");
-          const mMap = {jan:0,fev:1,mar:2,abr:3,mai:4,jun:5,jul:6,ago:7,set:8,out:9,nov:10,dez:11};
-          return new Date(Number(year), mMap[mon] ?? 0, 1).getTime();
-        };
-        return parseKey(a) - parseKey(b);
-      });
-
-      const y = months.map(m => monthMap.get(m).count);
-      const colors = months.map(m => monthMap.get(m).color);
-      const xPretty = months.map(m => m.replace(/(^\w)/, c => c.toUpperCase()));
-
-      const chartEl = document.getElementById("chart_venc");
-      Plotly.newPlot(chartEl, [{
-        type: "bar",
-        x: xPretty,
-        y,
-        marker: { color: colors },
-        showlegend: false
-      }], {
-        height: 320,
-        xaxis: { tickangle: -45, automargin: true },
-        margin: { t: 30, r: 20, b: 90, l: 50 }
-      }, { displayModeBar:false, responsive:true });
-
-      chartEl.on("plotly_click", (data) => {
-        if (!data || !data.points || !data.points.length) return;
-        const clicked = norm(data.points[0].x);
-        activeMonth = (activeMonth === clicked) ? null : clicked;
-        applyFilters();
-      });
-    }
-
-    function buildDiretoriaBar(rows) {
-      const base = (rows || []).filter(r => computeStatus(r) !== "ARQUIVADO");
-
-      const byDir = new Map();
-      base.forEach(r => {
-        const dir = String(getFirst(r, ["diretoria_responsavel","Diretoria","setor_lotacao","Setor","setor"]) || "").trim();
-        if (!dir) return;
-        byDir.set(dir, (byDir.get(dir) || 0) + 1);
-      });
-
-      const chartEl = document.getElementById("chart_dir");
-      if (byDir.size === 0) {
-        Plotly.purge(chartEl);
-        chartEl.innerHTML = `<div class="muted">Sem dados de diretoria para plotar.</div>`;
+      if (!n) {
+        wrap.innerHTML =
+          '<div class="empty-state" role="status">' +
+          '<svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><line x1="8" y1="11" x2="14" y2="11"/></svg>' +
+          '<strong>Nenhum resultado encontrado</strong>' +
+          '<p>Tente outros termos de busca ou limpe os filtros.</p>' +
+          '</div>';
         return;
       }
 
-      const items = Array.from(byDir.entries()).sort((a,b) => b[1] - a[1]);
-      const y = items.map(([dir]) => dir);
-      const x = items.map(([,count]) => count);
+      wrap.innerHTML = arr.map(function(x) {
+        var fotoSrc = (x.foto && x.foto.trim()) ? "fotos/" + x.foto.trim() : "";
+        var fotoImg = fotoSrc
+          ? '<img src="' + escapeAttr(fotoSrc) + '" alt="Foto de ' + escapeHtml(x.nome) + '" loading="lazy" ' +
+            'onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'flex\';">'
+          : "";
+        var placeholderStyle = fotoSrc ? "" : "display:flex;";
 
-      Plotly.newPlot(chartEl, [{
-        type: "bar",
-        orientation: "h",
-        y,
-        x,
-        marker: { color: "#6b7280" },
-        text: x.map(v => String(v)),
-        textposition: "outside",
-        cliponaxis: false,
-        hovertemplate: "<b>%{y}</b><br>Instrumentos: %{x}<extra></extra>",
-        showlegend: false
-      }], {
-        height: 320,
-        margin: { t: 10, r: 30, b: 30, l: 160 },
-        xaxis: { title: "Quantidade", rangemode: "tozero", automargin: true },
-        yaxis: { automargin: true }
-      }, { displayModeBar:false, responsive:true });
-    }
+        var linhasHtml = (x.linhas && x.linhas.length)
+          ? x.linhas.map(function(l) { return "<li>" + escapeHtml(l) + "</li>"; }).join("")
+          : "<li>Não informadas</li>";
 
-    function buildBrazilMap(rows) {
-      rows = (rows || []).filter(r => computeStatus(r) !== "ARQUIVADO");
+        var emailLink = x.email
+          ? '<a class="card-link" href="mailto:' + escapeAttr(x.email) + '" aria-label="Enviar e-mail para ' + escapeAttr(x.nome) + '">' + ICON_MAIL + escapeHtml(x.email) + '</a>'
+          : "";
 
-      const seen = new Set();
-      const uniqueRows = [];
-      rows.forEach(r => {
-        const id = String(getFirst(r, ["id_instrumento","ID","identificacao","Identificação","numero_processo","Processo","processo"]) || "").trim();
-        if (!id) return;
-        if (seen.has(id)) return;
-        seen.add(id);
-        uniqueRows.push(r);
-      });
-      rows = uniqueRows;
+        var lattesLink = x.lattes
+          ? '<a class="card-link" href="' + escapeAttr(x.lattes) + '" target="_blank" rel="noopener noreferrer" aria-label="Currículo Lattes de ' + escapeAttr(x.nome) + ', abre em nova aba">' + ICON_LATTES + 'Currículo Lattes</a>'
+          : "";
 
-      const byUF = new Map();
-      rows.forEach(r => {
-        const uf = getUF(r);
-        if (!uf) return;
+        return (
+          '<div class="card" role="listitem">' +
+            '<div class="card-body">' +
 
-        const id = String(getFirst(r, ["id_instrumento","ID","identificacao","Identificação","numero_processo","Processo","processo"]) || "").trim();
-        if (!id) return;
+              '<div class="card-photo-col">' +
+                '<div class="card-photo">' +
+                  fotoImg +
+                  '<div class="foto-placeholder" style="' + placeholderStyle + '">' +
+                    ICON_PERSON +
+                    '<span>Foto não<br>disponível</span>' +
+                  '</div>' +
+                '</div>' +
+              '</div>' +
 
-        const instRaw = getFirst(r, ["instituicao_parceira","instituicao","Instituição","instituicao_parceira_nome"]);
-        const inst = String(instRaw || "").trim();
+              '<div class="card-content">' +
+                '<h2 class="card-name">' + escapeHtml(x.nome) + '</h2>' +
+                '<p class="card-formacao">' + escapeHtml(x.formacao_base || "Formação não informada") + '</p>' +
+                '<p class="card-titulacao">' + escapeHtml(x.descricao_titulacao || "Titulação não informada") + '</p>' +
+                '<div class="card-diretoria">' + ICON_BUILDING + escapeHtml(x.diretoria_lotacao || "Lotação não informada") + '</div>' +
+                '<div class="card-linhas">' +
+                  '<div class="card-linhas-label">Linhas de pesquisa</div>' +
+                  '<ul>' + linhasHtml + '</ul>' +
+                '</div>' +
+              '</div>' +
 
-        if (!byUF.has(uf)) byUF.set(uf, { ids: new Set(), inst: new Set() });
-        const bucket = byUF.get(uf);
-        bucket.ids.add(id);
-        if (inst) bucket.inst.add(inst);
-      });
-
-      const ufCoords = {
-        AC: [-8.77, -70.55], AL: [-9.57, -36.78], AM: [-3.47, -65.10], AP: [ 1.41, -51.77],
-        BA: [-12.96, -41.71], CE: [-5.20, -39.53], DF: [-15.83, -47.86], ES: [-19.19, -40.34],
-        GO: [-15.98, -49.86], MA: [-5.42, -45.44], MG: [-18.10, -44.38], MS: [-20.51, -54.54],
-        MT: [-12.64, -55.42], PA: [-3.79, -52.48], PB: [-7.06, -35.55], PE: [-8.28, -35.07],
-        PI: [-8.28, -43.68], PR: [-24.89, -51.55], RJ: [-22.25, -42.66], RN: [-5.81, -36.59],
-        RO: [-10.83, -63.34], RR: [ 1.99, -61.33], RS: [-30.17, -53.50], SC: [-27.45, -50.95],
-        SE: [-10.57, -37.45], SP: [-22.19, -48.79], TO: [-10.25, -48.25]
-      };
-
-      const ufs = Array.from(byUF.keys()).sort();
-      const lats = [];
-      const lons = [];
-      const texts = [];
-      const sizes = [];
-
-      ufs.forEach(uf => {
-        const coord = ufCoords[uf];
-        if (!coord) return;
-
-        const info = byUF.get(uf);
-        const count = info.ids.size;
-
-        const instList = Array.from(info.inst).filter(Boolean).sort().slice(0, 6);
-        const instHtml = instList.length ? instList.map(x => `• ${escapeHTML(x)}`).join("<br>") : "—";
-
-        lats.push(coord[0]);
-        lons.push(coord[1]);
-        sizes.push(Math.min(24, 10 + count * 2));
-        texts.push(
-          `<b>${uf}</b><br>` +
-          `Parcerias: <b>${count}</b><br>` +
-          `<span style="color:#666">Instituições (amostra):</span><br>${instHtml}`
+            '</div>' +
+            '<div class="card-footer">' +
+              emailLink +
+              lattesLink +
+            '</div>' +
+          '</div>'
         );
-      });
-
-      const chartEl = document.getElementById("chart_map");
-      Plotly.newPlot(chartEl, [{
-        type: "scattergeo",
-        lat: lats,
-        lon: lons,
-        text: texts,
-        mode: "markers",
-        marker: { size: sizes, opacity: 0.85, color: "#111" },
-        showlegend: false,
-        hovertemplate: "%{text}<extra></extra>",
-        hoverlabel: { bgcolor: "#ffffff", bordercolor: "#dddddd", font: { color: "#111111", size: 12 } }
-      }], {
-        height: 320,
-        margin: { t: 10, r: 10, b: 10, l: 10 },
-        geo: {
-          scope: "south america",
-          resolution: 50,
-          showcountries: true,
-          countrycolor: "#bbb",
-          showland: true,
-          landcolor: "#f3f4f6",
-          showocean: true,
-          oceancolor: "#ffffff",
-          lataxis: { range: [-35, 6] },
-          lonaxis: { range: [-75, -30] }
-        }
-      }, { displayModeBar: false, responsive: true });
+      }).join("");
     }
 
-    // =========================
-    // applyFilters
-    // =========================
-    function applyFilters() {
-      const q = norm(searchEl.value);
-      const year = filterYearEl.value;
-      const tipo = filterTipoEl.value;
-      const statusSel = filterStatusEl.value;
-      const instSel = filterInstEl.value;
-      const ufSel = filterUFEl.value;
-
-      let rows = tbl.slice();
-
-      // ✅ arquivados não aparecem no painel
-      rows = rows.filter(r => computeStatus(r) !== "ARQUIVADO");
-
-      // ✅ ACTs concluídos
-      if (showOnlyConcluidos) {
-        rows = rows.filter(r => isConcluido(r));
-      }
-
-      if (activeMonth) {
-        rows = rows.filter(r => {
-          const rawVenc = getFirst(r, ["vigencia_termino","VIGÊNCIA - TÉRMINO","vencimento","Vencimento","vigencia_fim"]);
-          const d = parseDateAny(rawVenc);
-          if (!d) return false;
-          return monthLabelFromDate(d) === activeMonth;
-        });
-      }
-
-      if (year) {
-        rows = rows.filter(r => {
-          const rawVenc = getFirst(r, ["vigencia_termino","VIGÊNCIA - TÉRMINO","vencimento","Vencimento","vigencia_fim"]);
-          const d = parseDateAny(rawVenc);
-          if (!d) return false;
-          return String(d.getFullYear()) === year;
-        });
-      }
-
-      if (tipo) {
-        rows = rows.filter(r => String(getFirst(r, ["tipo_instrumento","Tipo","tipo"]) || "").trim() === tipo);
-      }
-
-      if (instSel) {
-        rows = rows.filter(r => {
-          const inst = String(getFirst(r, ["instituicao_parceira","instituicao","Instituição","instituicao_parceira_nome"]) || "").trim();
-          return inst === instSel;
-        });
-      }
-
-      if (ufSel) {
-        rows = rows.filter(r => getUF(r) === ufSel);
-      }
-
-      if (statusSel) {
-        rows = rows.filter(r => computeStatus(r) === statusSel);
-      }
-
-      if (q) {
-        rows = rows.filter(r => norm(Object.values(r).join(" ")).includes(q));
-      }
-
-      const anyFilter = Boolean(showOnlyConcluidos || activeMonth || q || year || tipo || statusSel || instSel || ufSel);
-
-      if (anyFilter) {
-        resetBtnEl.classList.add("active");
-        resetBtnEl.textContent = "Ver todos (filtro ativo)";
-      } else {
-        resetBtnEl.classList.remove("active");
-        resetBtnEl.textContent = "Ver todos";
-      }
-
-      const hints = [];
-      if (showOnlyConcluidos) hints.push("ACTs concluídos");
-      if (activeMonth) hints.push(`mês: ${activeMonth}`);
-      if (year) hints.push(`ano: ${year}`);
-      if (tipo) hints.push(`tipo: ${tipo}`);
-      if (instSel) hints.push(`instituição: ${instSel}`);
-      if (ufSel) hints.push(`UF: ${ufSel}`);
-      if (statusSel) hints.push(`status: ${statusSel}`);
-      if (q) hints.push(`busca`);
-
-      hintEl.textContent = hints.length
-        ? `Filtro ativo → ${hints.join(" • ")}. (Clique no mesmo mês no gráfico para limpar o mês.)`
-        : "";
-
-      render(rows);
-      updateKPIs(rows);
+    /* ── Debounce ────────────────────── */
+    function debounce(fn, ms) {
+      var t;
+      return function() { clearTimeout(t); t = setTimeout(fn, ms); };
     }
 
-    // =========================
-    // Listeners
-    // =========================
-    resetBtnEl.addEventListener("click", () => {
-      activeMonth = null;
-      showOnlyConcluidos = false;
-      btnConcluidosEl.classList.remove("active");
+    /* ── Eventos dos controles ───────── */
+    var debouncedRender = debounce(function() {
+      $("cards").classList.remove("searching");
+      render();
+    }, 260);
 
-      searchEl.value = "";
-      filterYearEl.value = "";
-      filterTipoEl.value = "";
-      filterStatusEl.value = "";
-      filterInstEl.value = "";
-      filterUFEl.value = "";
-
-      applyFilters();
+    $("q").addEventListener("input", function() {
+      $("cards").classList.add("searching");
+      debouncedRender();
     });
+    $("q").addEventListener("change", render);
 
-    btnConcluidosEl.addEventListener("click", () => {
-      showOnlyConcluidos = !showOnlyConcluidos;
-      btnConcluidosEl.classList.toggle("active", showOnlyConcluidos);
-      applyFilters();
-    });
+    $("ord").addEventListener("input",  render);
+    $("ord").addEventListener("change", render);
 
-    searchEl.addEventListener("input", applyFilters);
-    filterYearEl.addEventListener("change", applyFilters);
-    filterTipoEl.addEventListener("change", applyFilters);
-    filterStatusEl.addEventListener("change", applyFilters);
-    filterInstEl.addEventListener("change", applyFilters);
-    filterUFEl.addEventListener("change", applyFilters);
+    $("filtroTitulacao").addEventListener("change", render);
+    $("filtroDiretoria").addEventListener("change", render);
 
-    // =========================
-    // Init
-    // =========================
-    (async function init() {
-      const parsed = await new Promise((resolve, reject) => {
-        const csvNoCache = CSV_URL + "?v=" + Date.now();
-        Papa.parse(csvNoCache, {
-          download: true,
-          header: true,
-          skipEmptyLines: "greedy",
-          transformHeader: (h) => String(h || "").replace(/^\uFEFF/, "").trim(),
-          complete: (res) => {
-            if (res.errors && res.errors.length) console.warn("PapaParse:", res.errors);
-            let rows = res.data || [];
-            rows = rows.filter(r => Object.values(r || {}).some(v => String(v ?? "").trim() !== ""));
-            if (!rows.length) return reject(new Error("CSV vazio ou não encontrado"));
-            resolve(rows);
-          },
-          error: (err) => reject(err)
+    /* ── Primeira renderização (dados inline) ── */
+    populateTitulacaoFilter();
+    populateDiretoriaFilter();
+    render();
+
+    /* ── Fetch do JSON (fonte autoritativa) ─── */
+    fetch("pesquisadores.json")
+      .then(function(res) {
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        return res.json();
+      })
+      .then(function(data) {
+        PESQUISADORES = data.slice().sort(function(a, b) {
+          return (a.nome || "").localeCompare(b.nome || "", "pt-BR");
         });
+        populateTitulacaoFilter();
+        populateDiretoriaFilter();
+        render();
+      })
+      .catch(function() {
+        /* fetch falhou: dados inline já renderizados, nenhuma ação necessária */
       });
-
-      tbl = parsed;
-
-      populateFilterOptions(tbl);
-
-      // gráficos usam base completa (mas sem arquivados)
-      const baseCharts = tbl.filter(r => computeStatus(r) !== "ARQUIVADO");
-      buildStatusDonut(baseCharts);
-      buildVencBar(baseCharts);
-      buildBrazilMap(baseCharts);
-      buildDiretoriaBar(baseCharts);
-
-      // tabela + KPIs
-      applyFilters();
-    })().catch(err => {
-      console.error("[INIT] ERRO:", err);
-      alert("Erro ao carregar o CSV. Abra o Console (F12) para ver o detalhe.");
-    });
   </script>
+
 </body>
 </html>
