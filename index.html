@@ -805,12 +805,7 @@
 
                 <div class="k">Assinatura:</div><div class="v">${escapeHTML(dtAss || "—")}</div>
                 <div class="k">Publicação DOE:</div><div class="v">${escapeHTML(dtDoe || "—")}</div>
-                <div class="k">Link DOE:</div>
-                <div class="v">${
-                  linkDoe
-                    ? `<a href="${escapeHTML(linkDoe)}" target="_blank" rel="noopener noreferrer">Abrir</a>`
-                    : "—"
-                }</div>
+                ${linkDoe ? `<div class="k">Link DOE:</div><div class="v"><a href="${escapeHTML(linkDoe)}" target="_blank" rel="noopener noreferrer">Abrir</a></div>` : ""}
               </div>
 
               <details ${objetivoItens.length ? "open" : ""}>
