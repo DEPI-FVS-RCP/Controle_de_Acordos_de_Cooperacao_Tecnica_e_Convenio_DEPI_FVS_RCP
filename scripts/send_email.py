@@ -43,7 +43,7 @@ def main() -> None:
     # SMTP (GitHub Actions)
     smtp_host = os.getenv("SMTP_HOST", "smtp.gmail.com").strip()
     smtp_port = int(os.getenv("SMTP_PORT", "587").strip())
-    site_url  = os.getenv("SITE_URL", "").strip()
+    site_url = os.getenv("SITE_URL", "").strip()
 
     smtp_user = must_env("SMTP_USER")
     smtp_pass = must_env("SMTP_PASS")
@@ -60,14 +60,8 @@ def main() -> None:
     resumo = json.loads(RESUMO.read_text(encoding="utf-8"))
 
     data_exec = (resumo.get("data_execucao", "") or "").strip() or "N/D"
+    faixas = resumo.get("faixas") or {}
 
-    # ✅ Compatível com o monitor_act.py (novo formato)
-    faixas = (resumo.get("faixas") or {})
-
-    # LÓGICA (60/180):
-    # - confortável: >180d
-    # - alerta: 61–180d
-    # - crítico: ≤60d
     confort = parse_int(faixas, "confortavel_acima_180", 0)
     alerta180 = parse_int(faixas, "atencao_61_180", 0)
     crit60 = parse_int(faixas, "critica_ate_60", 0)
@@ -79,7 +73,6 @@ def main() -> None:
     ignorados = int(resumo.get("ignorados_arquivados", 0) or 0)
     concluidos = int(resumo.get("concluidos", 0) or 0)
 
-    # Assunto executivo (só 180/60)
     subject = (
         "Monitoramento Mensal de Acordos de Cooperação Técnica (ACT’s) / Convênios / Termos de Cooperação (TC) — "
         f"{data_exec} | 180d:{alerta180} • 60d:{crit60}"
@@ -133,10 +126,13 @@ def main() -> None:
         "Termos de Colaboração (TC) e Convênios, mediante acesso direto pelo link abaixo, o qual constitui a fonte regularmente atualizada "
         "das informações de vigência. Para consulta, basta acessar:"
     )
+
     if site_url:
         linhas.append(site_url)
+        linhas.append("Senha de acesso ao painel: depi2026")
     else:
         linhas.append("(URL do painel não configurada — defina o secret SITE_URL no repositório GitHub)")
+
     linhas.append("")
     linhas.append("Relatório gerado automaticamente pelo sistema de monitoramento.")
 
