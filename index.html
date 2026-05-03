@@ -282,6 +282,97 @@
     @media (max-width: 600px) {
       #farol-assinatura-fixa { display: none; }
     }
+
+    /* ===== OVERLAY DE SENHA ===== */
+    #password-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: linear-gradient(135deg, #f0f4f8 0%, #e8eef5 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #password-overlay.hidden { display: none; }
+    .pw-box {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 18px;
+      padding: 40px 44px 36px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.10);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+      min-width: 300px;
+      max-width: 360px;
+      width: 100%;
+    }
+    #pw-logo {
+      height: 72px;
+      width: auto;
+      object-fit: contain;
+      margin-bottom: 18px;
+      cursor: default;
+      user-select: none;
+      transition: transform 0.05s linear;
+      will-change: transform;
+    }
+    .pw-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: #1a1a2e;
+      margin-bottom: 6px;
+      letter-spacing: .3px;
+      text-align: center;
+    }
+    .pw-subtitle {
+      font-size: 12px;
+      color: #888;
+      margin-bottom: 22px;
+      text-align: center;
+    }
+    #pw-input {
+      width: 100%;
+      padding: 11px 14px;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      font-size: 15px;
+      outline: none;
+      background: #f8fafc;
+      box-sizing: border-box;
+      margin-bottom: 12px;
+      letter-spacing: 2px;
+      transition: border-color .2s;
+    }
+    #pw-input:focus { border-color: #4a90d9; background: #fff; }
+    #pw-input.pw-error { border-color: #d62c26; animation: shake .3s; }
+    @keyframes shake {
+      0%,100%{transform:translateX(0)}
+      20%,60%{transform:translateX(-6px)}
+      40%,80%{transform:translateX(6px)}
+    }
+    #pw-btn {
+      width: 100%;
+      padding: 11px;
+      background: #1a1a2e;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: .5px;
+      transition: background .2s;
+    }
+    #pw-btn:hover { background: #2d2d5e; }
+    #pw-error {
+      color: #d62c26;
+      font-size: 12px;
+      margin-top: 10px;
+      min-height: 16px;
+      text-align: center;
+    }
     .site-footer .footer-title {
       font-size: 16px;
       font-weight: 700;
@@ -300,6 +391,19 @@
 </head>
 
 <body>
+
+  <!-- OVERLAY DE SENHA -->
+  <div id="password-overlay">
+    <div class="pw-box">
+      <img id="pw-logo" src="./assets/fvs-logo.png" alt="FVS-RCP" />
+      <div class="pw-title">Acesso restrito</div>
+      <div class="pw-subtitle">FVS-RCP • DEPI</div>
+      <input id="pw-input" type="password" placeholder="Senha" autocomplete="current-password" />
+      <button id="pw-btn" type="button">Acessar</button>
+      <div id="pw-error"></div>
+    </div>
+  </div>
+
   <header class="topbar">
     <div class="brand">
       <div class="brand-logos">
@@ -514,6 +618,45 @@
   </footer>
 
   <script>
+    // ===========================
+    // OVERLAY DE SENHA
+    // ===========================
+    (function () {
+      const SENHA = "depi2026";
+      const overlay = document.getElementById("password-overlay");
+      const input   = document.getElementById("pw-input");
+      const btn     = document.getElementById("pw-btn");
+      const errEl   = document.getElementById("pw-error");
+      const logo    = document.getElementById("pw-logo");
+
+      function tentarAcesso() {
+        if (input.value === SENHA) {
+          overlay.classList.add("hidden");
+        } else {
+          errEl.textContent = "Senha incorreta.";
+          input.classList.add("pw-error");
+          input.value = "";
+          setTimeout(() => input.classList.remove("pw-error"), 400);
+        }
+      }
+
+      btn.addEventListener("click", tentarAcesso);
+      input.addEventListener("keydown", (e) => { if (e.key === "Enter") tentarAcesso(); });
+
+      // logo segue o mouse — máx 6px, sem rotação
+      document.addEventListener("mousemove", (e) => {
+        if (overlay.classList.contains("hidden")) return;
+        const rect = logo.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top  + rect.height / 2;
+        const dx = (e.clientX - cx) / window.innerWidth  * 12;
+        const dy = (e.clientY - cy) / window.innerHeight * 12;
+        const mx = Math.max(-6, Math.min(6, dx));
+        const my = Math.max(-6, Math.min(6, dy));
+        logo.style.transform = `translate(${mx}px, ${my}px)`;
+      });
+    })();
+
     // =========================
     // AJUSTE AQUI
     // =========================
