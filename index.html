@@ -35,8 +35,8 @@
     .logo.fvs{ height:48px; }
     .logo.depi{ height:54px; border-radius:8px; }
 
-    .brand-text .org{ font-size:12px; color:var(--muted); letter-spacing:.5px; text-transform:uppercase; margin-bottom:2px; display:flex; align-items:center; gap:8px; }
-    .brand-text .title{ margin:0; font-size:30px; line-height:1.15; display:flex; align-items:center; gap:10px; }
+    .brand-text .org{ font-size:11px; color:var(--muted); letter-spacing:.8px; text-transform:uppercase; margin-bottom:2px; display:flex; align-items:center; gap:8px; }
+    .brand-text .title{ margin:0; font-size:20px; font-weight:700; line-height:1.15; display:flex; align-items:center; gap:10px; }
     .brand-text .subtitle{ margin-top:4px; font-size:13px; color:var(--muted); }
 
     .titleIcon{ width: 24px; height: 24px; flex: 0 0 24px; }
@@ -77,13 +77,14 @@
       padding: 14px 16px;
       min-width: 220px;
       box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+      overflow: hidden;
     }
-    .card .kpiLabel { color:var(--muted); font-size:12px; }
+    .card .kpiLabel { color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.6px; }
     .card .value { font-size:28px; font-weight:800; margin-top:6px; }
 
-    .card.kpi-green { border-top: 3px solid #16a34a; }
-    .card.kpi-amber { border-top: 3px solid #f59e0b; }
-    .card.kpi-red   { border-top: 3px solid #d62c26; }
+    .card.kpi-green { border-top: 4px solid #16a34a; }
+    .card.kpi-amber { border-top: 4px solid #f59e0b; }
+    .card.kpi-red   { border-top: 4px solid #d62c26; }
     .card.kpi-green .value { color: #16a34a; }
     .card.kpi-amber .value { color: #d97706; }
     .card.kpi-red   .value { color: #d62c26; }
@@ -99,7 +100,8 @@
       box-shadow: 0 1px 2px rgba(0,0,0,0.04);
     }
 
-    #chart_status, #chart_venc, #chart_map, #chart_dir { width:100%; height:320px; }
+    #chart_status, #chart_venc, #chart_dir { width:100%; height:320px; }
+    #chart_map { width:100%; height:340px; position:relative; }
 
     .legend-risk {
       display: flex;
@@ -195,8 +197,13 @@
       vertical-align: middle;
     }
     .tbl thead th{
+      font-size:11px;
       font-weight:700;
-      background:#fbfbfb;
+      text-transform:uppercase;
+      letter-spacing:.5px;
+      color:#555;
+      background:#f4f6f8;
+      border-bottom:2px solid #e2e8f0;
       position: sticky;
       top: 0;
       z-index: 2;
@@ -281,6 +288,11 @@
     }
     @media (max-width: 600px) {
       #farol-assinatura-fixa { display: none; }
+    }
+
+    /* ===== MAPA FAROL ===== */
+    #chart_map {
+      position: relative;
     }
 
     /* ===== OVERLAY DE SENHA ===== */
@@ -524,7 +536,7 @@
 
       <div class="row" style="margin-top:14px;">
         <div class="panel">
-          <h3>Mapa (parcerias por UF)</h3>
+          <h3>Mapa Parcerias por UF</h3>
           <div id="chart_map"></div>
         </div>
 
@@ -1155,59 +1167,169 @@
         SE: [-10.57, -37.45], SP: [-22.19, -48.79], TO: [-10.25, -48.25]
       };
 
+      // Coordenadas de Manaus (origem institucional FVS-RCP)
+      const AM_COORD = [-3.10, -60.02];
+
       const ufs = Array.from(byUF.keys()).sort();
-      const lats = [];
-      const lons = [];
-      const texts = [];
-      const sizes = [];
+
+      // Pontos de conexão para linhas Manaus → parceiras
+      const connLats = [];
+      const connLons = [];
+
+      // Dados para pontos parceiros (exceto AM)
+      const pLats = [], pLons = [], pTexts = [], pSizes = [];
 
       ufs.forEach(uf => {
+        if (uf === "AM") return;
         const coord = ufCoords[uf];
         if (!coord) return;
 
         const info = byUF.get(uf);
         const count = info.ids.size;
-
         const instList = Array.from(info.inst).filter(Boolean).sort().slice(0, 6);
-        const instHtml = instList.length ? instList.map(x => `• ${escapeHTML(x)}`).join("<br>") : "—";
+        const instText = instList.length ? instList.map(x => escapeHTML(x)).join("<br>") : "—";
 
-        lats.push(coord[0]);
-        lons.push(coord[1]);
-        sizes.push(Math.min(24, 10 + count * 2));
-        texts.push(
-          `<b>${uf}</b><br>` +
-          `Parcerias: <b>${count}</b><br>` +
-          `<span style="color:#666">Instituições (amostra):</span><br>${instHtml}`
-        );
+        pLats.push(coord[0]);
+        pLons.push(coord[1]);
+        pSizes.push(8);
+        pTexts.push(`${uf} — ACTs: ${count}<br>${instText}`);
+
+        connLats.push(AM_COORD[0], coord[0], null);
+        connLons.push(AM_COORD[1], coord[1], null);
       });
 
       const chartEl = document.getElementById("chart_map");
-      Plotly.newPlot(chartEl, [{
+
+      // Traço 1 — linhas de conexão Manaus → parceiras (muito sutis)
+      const traceLines = {
         type: "scattergeo",
-        lat: lats,
-        lon: lons,
-        text: texts,
+        lat: connLats,
+        lon: connLons,
+        mode: "lines",
+        line: {
+          color: "rgba(30,100,160,0.15)",
+          width: 1
+        },
+        hoverinfo: "skip",
+        showlegend: false
+      };
+
+      // Traço 2 — pontos das UFs parceiras
+      const tracePartners = {
+        type: "scattergeo",
+        lat: pLats,
+        lon: pLons,
+        text: pTexts,
         mode: "markers",
-        marker: { size: sizes, opacity: 0.85, color: "#111" },
+        marker: {
+          size: pSizes,
+          color: "#4a7fa5",
+          opacity: 0.85,
+          line: { color: "#ffffff", width: 1 },
+          symbol: "circle"
+        },
         showlegend: false,
         hovertemplate: "%{text}<extra></extra>",
-        hoverlabel: { bgcolor: "#ffffff", bordercolor: "#dddddd", font: { color: "#111111", size: 12 } }
-      }], {
-        height: 320,
-        margin: { t: 10, r: 10, b: 10, l: 10 },
+        hoverlabel: {
+          bgcolor: "#ffffff",
+          bordercolor: "#4a7fa5",
+          font: { color: "#111111", size: 12 },
+          align: "center"
+        }
+      };
+
+      // Traço 3 — ponto AM (Manaus, origem institucional) — círculo verde-escuro
+      const amInfo = byUF.get("AM");
+      const amCount = amInfo ? amInfo.ids.size : 0;
+      const amInsts = amInfo ? Array.from(amInfo.inst).filter(Boolean).sort().slice(0, 6) : [];
+      const amInstText = amInsts.length ? amInsts.map(x => escapeHTML(x)).join("<br>") : "—";
+
+      const traceAM = {
+        type: "scattergeo",
+        lat: [AM_COORD[0]],
+        lon: [AM_COORD[1]],
+        text: [
+          amCount > 0
+            ? `Amazonas — ACTs: ${amCount}<br>${amInstText}`
+            : `Amazonas — FVS-RCP / DEPI`
+        ],
+        mode: "markers",
+        marker: {
+          size: 14,
+          color: "#1a5e3f",
+          opacity: 1,
+          line: { color: "#ffffff", width: 1.5 },
+          symbol: "circle"
+        },
+        showlegend: false,
+        hovertemplate: "%{text}<extra></extra>",
+        hoverlabel: {
+          bgcolor: "#f0faf4",
+          bordercolor: "#1a5e3f",
+          font: { color: "#0d3320", size: 12 },
+          align: "center"
+        }
+      };
+
+      const layout = {
+        title: { text: "", font: { size: 13, color: "#444" }, x: 0.5, xanchor: "center" },
+        height: 340,
+        margin: { t: 30, r: 10, b: 10, l: 10 },
+        showlegend: false,
         geo: {
           scope: "south america",
           resolution: 50,
           showcountries: true,
-          countrycolor: "#bbb",
+          countrycolor: "#c0ccd8",
+          showsubunits: true,
+          subunitcolor: "#8fa8be",
           showland: true,
-          landcolor: "#f3f4f6",
+          landcolor: "#f0f4f8",
           showocean: true,
-          oceancolor: "#ffffff",
+          oceancolor: "#d6e4f0",
+          showlakes: true,
+          lakecolor: "#d6e4f0",
+          showrivers: false,
           lataxis: { range: [-35, 6] },
-          lonaxis: { range: [-75, -30] }
-        }
-      }, { displayModeBar: false, responsive: true });
+          lonaxis: { range: [-75, -30] },
+          bgcolor: "rgba(0,0,0,0)"
+        },
+        paper_bgcolor: "rgba(0,0,0,0)",
+        plot_bgcolor: "rgba(0,0,0,0)"
+      };
+
+      const plotTraces = (extraTraces) => {
+        Plotly.newPlot(chartEl, [...extraTraces, traceLines, tracePartners, traceAM], layout,
+          { displayModeBar: false, responsive: true }
+        );
+      };
+
+      fetch("assets/br_states.geojson")
+        .then(r => r.json())
+        .then(geojson => {
+          const bLats = [], bLons = [];
+          geojson.features.forEach(feat => {
+            const geom = feat.geometry;
+            const polys = geom.type === "MultiPolygon" ? geom.coordinates : [geom.coordinates];
+            polys.forEach(poly => {
+              poly.forEach(ring => {
+                ring.forEach(([lon, lat]) => { bLats.push(lat); bLons.push(lon); });
+                bLats.push(null); bLons.push(null);
+              });
+            });
+          });
+          const traceBorders = {
+            type: "scattergeo",
+            lat: bLats,
+            lon: bLons,
+            mode: "lines",
+            line: { color: "#c7d2de", width: 0.6 },
+            hoverinfo: "skip",
+            showlegend: false
+          };
+          plotTraces([traceBorders]);
+        })
+        .catch(() => plotTraces([]));
     }
 
     // =========================
