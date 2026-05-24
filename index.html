@@ -183,6 +183,32 @@
       background:#fff;
     }
     .table-scroll{ width: 100%; overflow-x: auto; }
+    .panel-table-header{
+      display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:6px;
+    }
+    .panel-table-header h3{ margin:0; }
+    .btn-export{
+      font-size:11px; font-weight:500; padding:3px 10px;
+      border:1px solid #94a3b8; border-radius:4px;
+      background:transparent; color:#475569;
+      cursor:pointer; letter-spacing:.02em; white-space:nowrap;
+      transition:background .15s,color .15s,border-color .15s;
+    }
+    .btn-export:hover{ background:#f1f5f9; border-color:#64748b; color:#1e3a5f; }
+    .btn-export:active{ background:#e2e8f0; }
+    .section-concluidos{
+      border-top:1px solid #e2e8f0; padding-top:4px; margin-top:18px;
+    }
+    .section-concluidos > summary{
+      font-size:13px; font-weight:600; color:#475569;
+      cursor:pointer; list-style:none; padding:6px 2px;
+      user-select:none;
+    }
+    .section-concluidos > summary::-webkit-details-marker{ display:none; }
+    .section-concluidos > summary:hover{ color:#1e3a5f; }
+    .section-concluidos[open] > summary{ color:#1e3a5f; }
+    .tbl-concluidos tbody tr{ opacity:.82; }
+    .tbl-concluidos tbody tr:hover{ opacity:1; }
     .tbl{
       width: 100%;
       border-collapse: collapse;
@@ -547,8 +573,6 @@
       </div>
 
       <div class="panel" style="margin-top:14px;">
-        <h3>Instrumentos</h3>
-
         <div class="legenda">
           <strong>Legenda</strong><br>
           <span><strong>ACT</strong> = Acordo de Cooperação Técnica</span><br>
@@ -582,6 +606,11 @@
           <input id="search" placeholder="Buscar (identificação, instituição, processo, status...)" />
         </div>
 
+        <div class="panel-table-header" style="margin-top:10px;">
+          <h3>Instrumentos Ativos</h3>
+          <button id="btnExportAtivos" class="btn-export" type="button">⬇ CSV</button>
+        </div>
+
         <div class="tableWrap">
           <div class="table-scroll">
             <table id="tbl" class="tbl">
@@ -604,6 +633,37 @@
             </table>
           </div>
         </div>
+
+        <details id="detailsConcluidos" class="section-concluidos">
+          <summary>▸ Mostrar instrumentos concluídos</summary>
+          <div class="panel-table-header" style="margin-top:12px;">
+            <h3>Instrumentos Concluídos</h3>
+            <button id="btnExportConcluidos" class="btn-export" type="button">⬇ CSV</button>
+          </div>
+          <div class="tableWrap">
+            <div class="table-scroll">
+              <table class="tbl tbl-concluidos">
+                <thead>
+                  <tr>
+                    <th>Identificação</th>
+                    <th>Tipo</th>
+                    <th>Instituição</th>
+                    <th>Diretoria</th>
+                    <th>Gerência</th>
+                    <th>Status</th>
+                    <th>Início</th>
+                    <th>Vencimento</th>
+                    <th>Aditivos</th>
+                    <th>Processo</th>
+                    <th>Detalhes</th>
+                  </tr>
+                </thead>
+                <tbody id="tbodyConcluidos"></tbody>
+              </table>
+            </div>
+          </div>
+        </details>
+
       </div>
     </main>
   </div>
@@ -806,7 +866,8 @@
     // =========================
     let tbl = [];
     let activeMonth = null;
-    let showOnlyConcluidos = false;
+    let lastActiveRows = [];
+    let lastConclRows  = [];
 
     // =========================
     // Elementos
@@ -822,7 +883,9 @@
     const filterInstEl = document.getElementById("filterInst");
     const filterUFEl = document.getElementById("filterUF");
 
-    const tbodyEl = document.getElementById("tbody");
+    const tbodyEl        = document.getElementById("tbody");
+    const tbodyConclEl   = document.getElementById("tbodyConcluidos");
+    const detailsConclEl = document.getElementById("detailsConcluidos");
 
     const kpi_total = document.getElementById("kpi_total");
     const kpi_vigentes = document.getElementById("kpi_vigentes");
@@ -878,8 +941,8 @@
     // =========================
     // Render Tabela
     // =========================
-    function render(rows) {
-      tbodyEl.innerHTML = "";
+    function render(rows, targetEl = tbodyEl) {
+      targetEl.innerHTML = "";
 
       rows.forEach((r) => {
         const ident = getFirst(r, ["identificacao","Identificação","id_instrumento","ID"]);
@@ -944,7 +1007,7 @@
           <td>${escapeHTML(proc || "—")}</td>
           <td><button class="btn js-toggle" type="button">▼</button></td>
         `;
-        tbodyEl.appendChild(tr);
+        targetEl.appendChild(tr);
 
         const trDetails = document.createElement("tr");
         trDetails.className = "detailsRow";
@@ -976,7 +1039,7 @@
             </div>
           </td>
         `;
-        tbodyEl.appendChild(trDetails);
+        targetEl.appendChild(trDetails);
 
         const btn = tr.querySelector(".js-toggle");
         btn.addEventListener("click", () => {
@@ -1336,66 +1399,57 @@
     // applyFilters
     // =========================
     function applyFilters() {
-      const q = norm(searchEl.value);
-      const year = filterYearEl.value;
-      const tipo = filterTipoEl.value;
+      const q         = norm(searchEl.value);
+      const year      = filterYearEl.value;
+      const tipo      = filterTipoEl.value;
       const statusSel = filterStatusEl.value;
-      const instSel = filterInstEl.value;
-      const ufSel = filterUFEl.value;
+      const instSel   = filterInstEl.value;
+      const ufSel     = filterUFEl.value;
 
-      let rows = tbl.slice();
+      // base: remover arquivados
+      const base = tbl.slice().filter(r => computeStatus(r) !== "ARQUIVADO");
 
-      // ✅ arquivados não aparecem no painel
-      rows = rows.filter(r => computeStatus(r) !== "ARQUIVADO");
+      // bifurcar estruturalmente em ativos e concluídos
+      const activeBase = base.filter(r => !isConcluido(r));
+      const conclBase  = base.filter(r =>  isConcluido(r));
 
-      // ✅ ACTs concluídos
-      if (showOnlyConcluidos) {
-        rows = rows.filter(r => isConcluido(r));
+      // aplicar filtros de UI em qualquer conjunto
+      function applyUI(rows) {
+        if (activeMonth) {
+          rows = rows.filter(r => {
+            const rawVenc = getFirst(r, ["vigencia_termino","VIGÊNCIA - TÉRMINO","vencimento","Vencimento","vigencia_fim"]);
+            const d = parseDateAny(rawVenc);
+            if (!d) return false;
+            return monthLabelFromDate(d) === activeMonth;
+          });
+        }
+        if (year) {
+          rows = rows.filter(r => {
+            const rawVenc = getFirst(r, ["vigencia_termino","VIGÊNCIA - TÉRMINO","vencimento","Vencimento","vigencia_fim"]);
+            const d = parseDateAny(rawVenc);
+            if (!d) return false;
+            return String(d.getFullYear()) === year;
+          });
+        }
+        if (tipo)      rows = rows.filter(r => String(getFirst(r, ["tipo_instrumento","Tipo","tipo"]) || "").trim() === tipo);
+        if (instSel)   rows = rows.filter(r => String(getFirst(r, ["instituicao_parceira","instituicao","Instituição","instituicao_parceira_nome"]) || "").trim() === instSel);
+        if (ufSel)     rows = rows.filter(r => getUF(r) === ufSel);
+        if (statusSel) rows = rows.filter(r => computeStatus(r) === statusSel);
+        if (q)         rows = rows.filter(r => norm(Object.values(r).join(" ")).includes(q));
+        return rows;
       }
 
-      if (activeMonth) {
-        rows = rows.filter(r => {
-          const rawVenc = getFirst(r, ["vigencia_termino","VIGÊNCIA - TÉRMINO","vencimento","Vencimento","vigencia_fim"]);
-          const d = parseDateAny(rawVenc);
-          if (!d) return false;
-          return monthLabelFromDate(d) === activeMonth;
-        });
-      }
+      const activeRows = applyUI(activeBase);
+      const conclRows  = applyUI(conclBase);
 
-      if (year) {
-        rows = rows.filter(r => {
-          const rawVenc = getFirst(r, ["vigencia_termino","VIGÊNCIA - TÉRMINO","vencimento","Vencimento","vigencia_fim"]);
-          const d = parseDateAny(rawVenc);
-          if (!d) return false;
-          return String(d.getFullYear()) === year;
-        });
-      }
+      lastActiveRows = activeRows;
+      lastConclRows  = conclRows;
 
-      if (tipo) {
-        rows = rows.filter(r => String(getFirst(r, ["tipo_instrumento","Tipo","tipo"]) || "").trim() === tipo);
-      }
+      render(activeRows, tbodyEl);
+      render(conclRows,  tbodyConclEl);
+      updateKPIs(activeRows);
 
-      if (instSel) {
-        rows = rows.filter(r => {
-          const inst = String(getFirst(r, ["instituicao_parceira","instituicao","Instituição","instituicao_parceira_nome"]) || "").trim();
-          return inst === instSel;
-        });
-      }
-
-      if (ufSel) {
-        rows = rows.filter(r => getUF(r) === ufSel);
-      }
-
-      if (statusSel) {
-        rows = rows.filter(r => computeStatus(r) === statusSel);
-      }
-
-      if (q) {
-        rows = rows.filter(r => norm(Object.values(r).join(" ")).includes(q));
-      }
-
-      const anyFilter = Boolean(showOnlyConcluidos || activeMonth || q || year || tipo || statusSel || instSel || ufSel);
-
+      const anyFilter = Boolean(activeMonth || q || year || tipo || statusSel || instSel || ufSel);
       if (anyFilter) {
         resetBtnEl.classList.add("active");
         resetBtnEl.textContent = "Ver todos (filtro ativo)";
@@ -1405,21 +1459,16 @@
       }
 
       const hints = [];
-      if (showOnlyConcluidos) hints.push("ACTs concluídos");
       if (activeMonth) hints.push(`mês: ${activeMonth}`);
-      if (year) hints.push(`ano: ${year}`);
-      if (tipo) hints.push(`tipo: ${tipo}`);
-      if (instSel) hints.push(`instituição: ${instSel}`);
-      if (ufSel) hints.push(`UF: ${ufSel}`);
-      if (statusSel) hints.push(`status: ${statusSel}`);
-      if (q) hints.push(`busca`);
-
+      if (year)        hints.push(`ano: ${year}`);
+      if (tipo)        hints.push(`tipo: ${tipo}`);
+      if (instSel)     hints.push(`instituição: ${instSel}`);
+      if (ufSel)       hints.push(`UF: ${ufSel}`);
+      if (statusSel)   hints.push(`status: ${statusSel}`);
+      if (q)           hints.push(`busca`);
       hintEl.textContent = hints.length
         ? `Filtro ativo → ${hints.join(" • ")}. (Clique no mesmo mês no gráfico para limpar o mês.)`
         : "";
-
-      render(rows);
-      updateKPIs(rows);
     }
 
     // =========================
@@ -1427,8 +1476,6 @@
     // =========================
     resetBtnEl.addEventListener("click", () => {
       activeMonth = null;
-      showOnlyConcluidos = false;
-      btnConcluidosEl.classList.remove("active");
 
       searchEl.value = "";
       filterYearEl.value = "";
@@ -1441,10 +1488,39 @@
     });
 
     btnConcluidosEl.addEventListener("click", () => {
-      showOnlyConcluidos = !showOnlyConcluidos;
-      btnConcluidosEl.classList.toggle("active", showOnlyConcluidos);
-      applyFilters();
+      detailsConclEl.open = true;
+      detailsConclEl.scrollIntoView({ behavior: "smooth", block: "start" });
     });
+
+    // exportar CSV com BOM UTF-8 e separador ;
+    function exportCSV(rows, filename) {
+      if (!rows || !rows.length) { alert("Nenhum instrumento disponível para exportar."); return; }
+      const cols = [
+        { label: "Identificação", fn: r => getFirst(r, ["identificacao","Identificação","id_instrumento","ID"]) },
+        { label: "Tipo",          fn: r => getFirst(r, ["tipo_instrumento","Tipo","tipo"]) },
+        { label: "Instituição",   fn: r => getFirst(r, ["instituicao_parceira","instituicao","Instituição","instituicao_parceira_nome"]) },
+        { label: "Diretoria",     fn: r => getFirst(r, ["diretoria_responsavel","Diretoria","setor_lotacao","Setor","setor"]) },
+        { label: "Gerência",      fn: r => getFirst(r, ["gerencia_responsavel","Gerência","gerencia"]) },
+        { label: "Status",        fn: r => computeStatus(r) },
+        { label: "Início",        fn: r => formatDateBR(getFirst(r, ["vigencia_inicio","VIGÊNCIA - INÍCIO","inicio","Inicio"])) || "—" },
+        { label: "Vencimento",    fn: r => formatDateBR(getFirst(r, ["vigencia_termino","VIGÊNCIA - TÉRMINO","vencimento","Vencimento","vigencia_fim"])) || "—" },
+        { label: "Aditivos",      fn: r => {
+          const p = (String(getFirst(r, ["possui_aditivo","aditivo","Aditivo"]) || "")).trim().toUpperCase();
+          const q = (String(getFirst(r, ["quantos_aditivos","Qtd Aditivos","qtd_aditivos"]) || "")).trim();
+          return ["SIM","S","TRUE","1"].includes(p) ? (q ? `SIM (${q})` : "SIM") : "NÃO";
+        }},
+        { label: "Processo",      fn: r => getFirst(r, ["numero_processo","Processo","processo"]) },
+      ];
+      const esc = v => { const s = String(v ?? "—"); return s.includes(";") || s.includes('"') || s.includes("\n") ? `"${s.replace(/"/g,'""')}"` : s; };
+      const header = cols.map(c => esc(c.label)).join(";");
+      const lines  = rows.map(r => cols.map(c => esc(c.fn(r) ?? "—")).join(";"));
+      const blob = new Blob(["﻿" + header + "\r\n" + lines.join("\r\n")], { type: "text/csv;charset=utf-8;" });
+      const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: filename, style: "display:none" });
+      document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(a.href);
+    }
+
+    document.getElementById("btnExportAtivos").addEventListener("click", () => exportCSV(lastActiveRows, "instrumentos_ativos.csv"));
+    document.getElementById("btnExportConcluidos").addEventListener("click", () => exportCSV(lastConclRows, "instrumentos_concluidos.csv"));
 
     searchEl.addEventListener("input", applyFilters);
     filterYearEl.addEventListener("change", applyFilters);
