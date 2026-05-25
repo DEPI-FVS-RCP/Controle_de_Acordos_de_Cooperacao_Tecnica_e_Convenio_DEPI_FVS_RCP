@@ -286,17 +286,45 @@
       text-align: center;
       gap: 6px;
     }
-    /* === FAROL — assinatura estática no rodapé === */
+    /* === Caixa de autoria técnica === */
+    .footer-autoria-box {
+      width: 100vw;
+      background: #14532d;
+      border-radius: 6px;
+      margin-top: 14px;
+      margin-left: calc(50% - 50vw);
+      margin-right: calc(50% - 50vw);
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      box-sizing: border-box;
+      position: relative;
+    }
+    .footer-autoria-texto {
+      flex: 1;
+      text-align: center;
+      color: #fff;
+      font-weight: 400;
+      font-size: 13px;
+      line-height: 1.5;
+      padding: 0 86px;
+    }
+    /* === FAROL — assinatura dentro da caixa de autoria === */
     #farol-assinatura-fixa {
-      position: absolute;
-      right: 16px;
-      bottom: 10px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: flex-end;
-      opacity: 0.72;
+      justify-content: center;
+      opacity: 0.9;
       pointer-events: none;
+      flex-shrink: 0;
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
     }
     #farol-assinatura-fixa .farol-icon {
       width: 22px;
@@ -305,15 +333,20 @@
     }
     #farol-assinatura-fixa .farol-texto {
       font-size: 10px;
-      font-weight: 600;
-      color: #888;
+      font-weight: 700;
+      color: #fff;
       margin-top: 2px;
       letter-spacing: .6px;
       line-height: 1;
       text-align: center;
     }
     @media (max-width: 600px) {
-      #farol-assinatura-fixa { display: none; }
+      .footer-autoria-box {
+        gap: 10px;
+      }
+      .footer-autoria-texto {
+        padding: 0 58px;
+      }
     }
 
     /* ===== MAPA FAROL ===== */
@@ -675,18 +708,23 @@
       <p>Fundação de Vigilância em Saúde do Amazonas – Dra. Rosemary Costa Pinto (FVS-RCP)</p>
       <p>Diretoria de Ensino, Pesquisa e Inovação (DEPI)</p>
       <p>Endereço: Avenida Torquato Tapajós, 4.010, Colônia Santo Antônio, CEP 69.093-018, Manaus – AM.</p>
-      <p style="margin:0;padding:0;line-height:1.2">Produção técnica institucional concebida e desenvolvida pelo servidor Walter Oliva Pinto Filho Segundo – DEPI/FVS-RCP.<br>walterolivafvs@gmail.com</p>
-    </div>
-    <div id="farol-assinatura-fixa" aria-hidden="true">
-      <svg class="farol-icon" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M8 20 L16 20 L14 15 L10 15 Z"/>
-        <rect x="10.5" y="9" width="3" height="6"/>
-        <rect x="9.5" y="7" width="5" height="2"/>
-        <line x1="12" y1="5" x2="12" y2="7"/>
-        <line x1="12" y1="6" x2="6" y2="4"/>
-        <line x1="12" y1="6" x2="18" y2="4"/>
-      </svg>
-      <div class="farol-texto">FAROL</div>
+      <div class="footer-autoria-box">
+        <div class="footer-autoria-texto">
+          Produção técnica institucional concebida e desenvolvida pelo servidor Walter Oliva Pinto Filho Segundo – DEPI/FVS-RCP.<br>
+          walterolivafvs@gmail.com
+        </div>
+        <div id="farol-assinatura-fixa" aria-hidden="true">
+          <svg class="farol-icon" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8 20 L16 20 L14 15 L10 15 Z"/>
+            <rect x="10.5" y="9" width="3" height="6"/>
+            <rect x="9.5" y="7" width="5" height="2"/>
+            <line x1="12" y1="5" x2="12" y2="7"/>
+            <line x1="12" y1="6" x2="6" y2="4"/>
+            <line x1="12" y1="6" x2="18" y2="4"/>
+          </svg>
+          <div class="farol-texto">FAROL</div>
+        </div>
+      </div>
     </div>
   </footer>
 
