@@ -8,6 +8,9 @@
   <!-- libs (compatíveis com GitHub Pages e localhost) -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 
   <style>
     :root { --card:#fff; --border:#e7e7e7; --muted:#666; --bg:#fafafa; }
@@ -269,6 +272,49 @@
       .sidebar{ width: auto; position: relative; top: 0; }
     }
 
+    /* ===== PAINEL GEO LOCAL — Leaflet ===== */
+    #local-geo-panel {
+      display: none;
+      position: fixed;
+      z-index: 7500;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 50vw;
+      height: 75vh;
+      min-width: 440px;
+      min-height: 380px;
+      background: #fff;
+      border: 1px solid #c5d2e0;
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+      overflow: hidden;
+      pointer-events: all;
+      flex-direction: column;
+    }
+    #local-geo-panel.open { display: flex; flex-direction: column; }
+    #local-geo-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px 9px;
+      border-bottom: 3px solid #1a3a5c;
+      background: #f8fafc;
+      flex-shrink: 0;
+      z-index: 1;
+    }
+    #local-geo-header-left { display: flex; align-items: baseline; gap: 8px; }
+    #local-geo-title { font-size: 14px; font-weight: 700; color: #1a3a5c; letter-spacing: 0.3px; }
+    #local-geo-sub  { font-size: 12px; color: #64748b; font-weight: 400; }
+    #local-geo-close {
+      background: none; border: none; cursor: pointer;
+      font-size: 16px; color: #94a3b8; padding: 2px 6px;
+      border-radius: 6px; line-height: 1;
+    }
+    #local-geo-close:hover { background: #f1f5f9; color: #1a3a5c; }
+    #local-geo-map { flex: 1; position: relative; }
+    #leaflet-map   { width: 100%; height: 100%; }
+
     /* Rodapé institucional */
     .site-footer {
       background: #fff;
@@ -458,6 +504,19 @@
       border-radius: 2px;
       margin: 10px 0;
     }
+    /* Leaflet tooltip dos marcadores */
+    .geo-label {
+      background: rgba(255,255,255,0.95) !important;
+      border: 1px solid #c5d2e0 !important;
+      border-radius: 6px !important;
+      padding: 4px 8px !important;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.12) !important;
+      font-family: Arial, sans-serif !important;
+      font-size: 12px !important;
+      color: #1a3a5c !important;
+      white-space: nowrap !important;
+    }
+    .geo-label::before { display: none !important; }
   </style>
 </head>
 
@@ -727,6 +786,20 @@
       </div>
     </div>
   </footer>
+
+  <!-- PAINEL GEO LOCAL DE PARCERIAS — Leaflet -->
+  <div id="local-geo-panel" role="complementary" aria-label="Mapa local de parcerias">
+    <div id="local-geo-header">
+      <div id="local-geo-header-left">
+        <span id="local-geo-title">Parcerias</span>
+        <span id="local-geo-sub">— parcerias institucionais</span>
+      </div>
+      <button id="local-geo-close" onclick="closeGeoPanel()" title="Fechar">✕</button>
+    </div>
+    <div id="local-geo-map">
+      <div id="leaflet-map"></div>
+    </div>
+  </div>
 
   <script>
     // ===========================
@@ -1287,13 +1360,10 @@
 
         const info = byUF.get(uf);
         const count = info.ids.size;
-        const instList = Array.from(info.inst).filter(Boolean).sort().slice(0, 6);
-        const instText = instList.length ? instList.map(x => escapeHTML(x)).join("<br>") : "—";
-
         pLats.push(coord[0]);
         pLons.push(coord[1]);
         pSizes.push(8);
-        pTexts.push(`${uf} — ACTs: ${count}<br>${instText}`);
+        pTexts.push(uf === "CE" ? `Ceará<br><b>${count}</b>` : `${uf} — ACTs: ${count}`);
 
         connLats.push(AM_COORD[0], coord[0], null);
         connLons.push(AM_COORD[1], coord[1], null);
@@ -1332,9 +1402,9 @@
         showlegend: false,
         hovertemplate: "%{text}<extra></extra>",
         hoverlabel: {
-          bgcolor: "#ffffff",
-          bordercolor: "#4a7fa5",
-          font: { color: "#111111", size: 12 },
+          bgcolor: "#f0faf4",
+          bordercolor: "#1a5e3f",
+          font: { color: "#0d3320", size: 12 },
           align: "center"
         }
       };
@@ -1351,8 +1421,8 @@
         lon: [AM_COORD[1]],
         text: [
           amCount > 0
-            ? `Amazonas — ACTs: ${amCount}<br>${amInstText}`
-            : `Amazonas — FVS-RCP / DEPI`
+            ? `Amazonas<br><b>${amCount}</b>`
+            : `Amazonas`
         ],
         mode: "markers",
         marker: {
@@ -1403,6 +1473,17 @@
         Plotly.newPlot(chartEl, [...extraTraces, traceLines, tracePartners, traceAM], layout,
           { displayModeBar: false, responsive: true }
         );
+        chartEl.on("plotly_hover", (evtData) => {
+          cancelGeoClose();
+          if (!evtData || !evtData.points || !evtData.points.length) return;
+          const txt = String(evtData.points[0].text || "");
+          let uf = "";
+          if (txt.startsWith("Amazonas")) uf = "AM";
+          else if (txt.startsWith("Ceará")) uf = "CE";
+          else { const m = txt.match(/^([A-Z]{2})/); if (m) uf = m[1]; }
+          if (uf) openGeoPanel(uf);
+        });
+        chartEl.on("plotly_unhover", () => scheduleGeoClose());
       };
 
       fetch("assets/br_states.geojson")
@@ -1566,6 +1647,146 @@
     filterStatusEl.addEventListener("change", applyFilters);
     filterInstEl.addEventListener("change", applyFilters);
     filterUFEl.addEventListener("change", applyFilters);
+
+    // =========================
+    // PAINEL GEO LOCAL — Leaflet + tbl_instituicoes_geo.csv
+    // =========================
+    // =========================
+    // PAINEL GEO LOCAL — SVG puro, zero dependências
+    // ─ Para adicionar cidade:
+    //   1. criar  assets/maps/CIDADE.geojson   (polígonos de zonas/bairros)
+    //   2. criar  assets/maps/riodejaneiro.geojson  (exemplo já existe como stub)
+    //   3. setar  stub: false  na entrada de GEO_CONFIG
+    //   4. acrescentar linha(s) em  data/tbl_instituicoes_geo.csv
+    // =========================
+    // =========================
+    // PAINEL GEO LOCAL — Leaflet + OpenStreetMap
+    // =========================
+    let _leafletUF    = null;   // UF atualmente exibida (mantido por compatibilidade)
+    let _gInsts       = [];     // instituições carregadas do CSV geo
+    let _gTimer       = null;
+
+    const GEO_CONFIG = {
+      AM: { city: "Manaus",    zoom: 14, center: [-3.1040, -60.0150] },
+      CE: { city: "Fortaleza", zoom: 14, center: [-3.7600, -38.5700] }
+    };
+
+    // ─── render principal — Leaflet ───────────────────────────────
+    let _leafletMap = null;
+
+    function openGeoPanel(uf) {
+      const cfg = GEO_CONFIG[uf];
+      if (!cfg) return;
+
+      // Atualizar cabeçalho
+      const titleEl = document.getElementById("local-geo-title");
+      const subEl   = document.getElementById("local-geo-sub");
+      if (titleEl) titleEl.textContent = cfg.city;
+      if (subEl)   subEl.textContent   = "— parcerias institucionais";
+
+      // Abrir painel
+      const panel = document.getElementById("local-geo-panel");
+      panel.classList.add("open");
+
+      // Inicializar Leaflet uma única vez
+      if (!_leafletMap) {
+        _leafletMap = L.map("leaflet-map", { zoomControl: true });
+        L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+          attribution: "© OpenStreetMap © CARTO",
+          subdomains: "abcd",
+          maxZoom: 19
+        }).addTo(_leafletMap);
+        _leafletMap.setView([-3.1040, -60.0150], 13, {animate: false});
+      }
+      _leafletMap.invalidateSize();
+      setTimeout(function() {
+
+        if (_gUF === uf) return;
+        _gUF = uf;
+
+        // Remover marcadores anteriores
+        _leafletMap.eachLayer(layer => {
+          if (layer instanceof L.Marker) _leafletMap.removeLayer(layer);
+        });
+
+        // Centralizar
+        _leafletMap.setView(cfg.center, cfg.zoom, {animate: false});
+
+        // Adicionar marcadores
+        const pts = _gInsts.filter(i => i.uf === uf);
+        const bounds = [];
+
+        pts.forEach(inst => {
+          const icon = L.divIcon({
+            className: "",
+            html: '<div style="width:13px;height:13px;background:#1a5e3f;border:2px solid #fff;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,0.5);cursor:pointer;"></div>',
+            iconSize: [13, 13],
+            iconAnchor: [6, 6]
+          });
+
+          const marker = L.marker([inst.lat, inst.lon], { icon });
+
+          marker.bindTooltip(
+            '<strong>' + (inst.short || inst.name) + '</strong><br><span style="font-size:11px;color:#555">' + inst.name + '</span>',
+            { permanent: true, direction: "right", offset: [8, 0], className: "geo-label" }
+          );
+
+          if (inst.url) {
+            marker.on("click", function() {
+              window.open(inst.url, "_blank", "noopener,noreferrer");
+            });
+          }
+
+          marker.addTo(_leafletMap);
+          bounds.push([inst.lat, inst.lon]);
+        });
+
+        if (bounds.length > 1) {
+          _leafletMap.fitBounds(bounds, { padding: [70, 70], animate: false });
+        } else if (bounds.length === 1) {
+          _leafletMap.setView(bounds[0], cfg.zoom);
+        }
+
+        // Segundo invalidateSize após marcadores
+        setTimeout(() => _leafletMap.invalidateSize(), 80);
+
+      }, 30);
+    }
+
+    function closeGeoPanel() {
+      document.getElementById("local-geo-panel").classList.remove("open");
+      _gUF = null;
+    }
+
+    function scheduleGeoClose() { _gTimer = setTimeout(closeGeoPanel, 200); }
+    function cancelGeoClose()   { if (_gTimer) { clearTimeout(_gTimer); _gTimer = null; } }
+
+    (function () {
+      const p = document.getElementById("local-geo-panel");
+      p.addEventListener("mouseenter", cancelGeoClose);
+      p.addEventListener("mouseleave", scheduleGeoClose);
+    })();
+
+    // Carregar CSV de instituições geo
+    fetch("data/tbl_instituicoes_geo.csv")
+      .then(r => r.text())
+      .then(csv => {
+        Papa.parse(csv, {
+          header: false, skipEmptyLines: true,
+          complete: ({data}) => {
+            _gInsts = (data || []).map(row => ({
+              name:  String(row[0] || "").trim(),
+              city:  String(row[1] || "").trim(),
+              uf:    String(row[2] || "").trim().toUpperCase(),
+              lat:   parseFloat(row[3]),
+              lon:   parseFloat(row[4]),
+              url:   String(row[5] || "").trim(),
+              short: String(row[6] || "").trim()
+            })).filter(i => i.name && i.uf && !isNaN(i.lat) && !isNaN(i.lon));
+          }
+        });
+      })
+      .catch(() => {});
 
     // =========================
     // Init
