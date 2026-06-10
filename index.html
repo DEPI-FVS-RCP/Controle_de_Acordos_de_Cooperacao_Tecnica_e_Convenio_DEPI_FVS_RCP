@@ -957,19 +957,19 @@
       return "#16a34a";
     }
 
-    // ✅ ACTs concluídos (pelo status_execucao do CSV)
+    // ✅ ACTs concluídos: baseado exclusivamente em vigencia_termino
+    // Concluído  -> vigencia_termino < hoje
+    // Ativo      -> vigencia_termino >= hoje
+    // Sem data / data inválida -> permanece em Ativos
+    // status_execucao NÃO é mais usado como critério de separação (apenas exibido na tabela)
     function isConcluido(row) {
-      const exec = String(getFirst(row, [
-        "status_execucao",
-        "status_execução",
-        "situacao_execucao",
-        "situação_execucao",
-        "andamento",
-        "execucao",
-        "execução"
-      ]) || "").trim().toUpperCase();
+      const rawVenc = getFirst(row, ["vigencia_termino","VIGÊNCIA - TÉRMINO","vencimento","Vencimento","vigencia_fim"]);
+      const d = parseDateAny(rawVenc);
+      if (!d) return false;
 
-      return exec.includes("CONCL") || exec.includes("FINALIZ");
+      const today = new Date();
+      const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      return d < todayStart;
     }
 
     // =========================
