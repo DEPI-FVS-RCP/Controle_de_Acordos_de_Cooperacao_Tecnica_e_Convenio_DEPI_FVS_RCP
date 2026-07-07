@@ -28,7 +28,24 @@
       padding: 14px 16px;
       margin: 8px 0 16px 0;
       box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+      position: relative;
     }
+    .logout-btn{
+      position: absolute;
+      top: 14px;
+      right: 16px;
+      background: #1a1a2e;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 7px 14px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: .3px;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    .logout-btn:hover{ background: #2d2d5e; }
     .brand{ display:flex; align-items:center; gap:14px; }
     .brand-logos{
       display:flex; align-items:center; gap:12px;
@@ -449,6 +466,23 @@
       margin-bottom: 22px;
       text-align: center;
     }
+    .pw-input-wrap { position: relative; width: 100%; margin-bottom: 12px; }
+    .pw-input-wrap #pw-input { margin-bottom: 0; padding-right: 42px; }
+    #pw-toggle {
+      position: absolute;
+      top: 50%;
+      right: 10px;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      padding: 2px;
+      cursor: pointer;
+      color: #94a3b8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #pw-toggle:hover { color: #475569; }
     #pw-input {
       width: 100%;
       padding: 11px 14px;
@@ -528,13 +562,21 @@
       <img id="pw-logo" src="./assets/fvs-logo.png" alt="FVS-RCP" />
       <div class="pw-title">Acesso restrito</div>
       <div class="pw-subtitle">FVS-RCP • DEPI</div>
-      <input id="pw-input" type="password" placeholder="Senha" autocomplete="current-password" />
+      <div class="pw-input-wrap">
+        <input id="pw-input" type="password" placeholder="Senha" autocomplete="current-password" />
+        <button id="pw-toggle" type="button" aria-label="Mostrar senha" title="Mostrar senha">
+          <svg id="pw-eye" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/>
+          </svg>
+        </button>
+      </div>
       <button id="pw-btn" type="button">Acessar</button>
       <div id="pw-error"></div>
     </div>
   </div>
 
   <header class="topbar">
+    <button id="logout-btn" class="logout-btn" type="button">Sair</button>
     <div class="brand">
       <div class="brand-logos">
         <img class="logo fvs" src="./assets/fvs-logo.png" alt="FVS-RCP" />
@@ -826,6 +868,28 @@
 
       btn.addEventListener("click", tentarAcesso);
       input.addEventListener("keydown", (e) => { if (e.key === "Enter") tentarAcesso(); });
+
+      // Logout: volta ao overlay de senha sem recarregar
+      const logoutBtn = document.getElementById("logout-btn");
+      if (logoutBtn) {
+        logoutBtn.addEventListener("click", () => {
+          input.value = "";
+          errEl.textContent = "";
+          overlay.classList.remove("hidden");
+          input.focus();
+        });
+      }
+
+      // Mostrar/ocultar senha
+      const toggle = document.getElementById("pw-toggle");
+      if (toggle) {
+        toggle.addEventListener("click", () => {
+          const visivel = input.type === "text";
+          input.type = visivel ? "password" : "text";
+          toggle.setAttribute("aria-label", visivel ? "Mostrar senha" : "Ocultar senha");
+          toggle.setAttribute("title", visivel ? "Mostrar senha" : "Ocultar senha");
+        });
+      }
 
       // logo segue o mouse — máx 6px, sem rotação
       document.addEventListener("mousemove", (e) => {
