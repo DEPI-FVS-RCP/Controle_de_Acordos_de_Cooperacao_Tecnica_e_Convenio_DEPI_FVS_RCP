@@ -643,54 +643,82 @@
     .view-tab:hover { color: #1a1a2e; }
     .view-tab.active { color: #1a1a2e; border-bottom-color: #1a5e3f; }
 
-    /* Histórico de Formalização dos Instrumentos (timeline horizontal por ano) */
-    .timeline-year {
-      margin: 36px 0 20px 0;
-      font-size: 20px;
-      font-weight: 700;
-      color: #1a5e3f;
-    }
-    .timeline-year:first-child { margin-top: 8px; }
-    .timeline-line {
-      position: relative;
-      display: flex;
-      gap: 32px;
+    /* Histórico de Formalização dos Instrumentos (timeline contínua por ano) */
+    .hist-timeline-wrap {
       overflow-x: auto;
-      padding: 8px 6px 10px 6px;
+      padding: 26px 6px 6px 6px;
     }
-    .timeline-line::before {
-      content: "";
-      position: absolute;
-      top: 16px;
-      left: 6px;
-      right: 6px;
-      height: 3px;
-      background: rgba(26,94,63,0.28);
-      border-radius: 2px;
+    .hist-timeline-track {
+      display: flex;
+      align-items: flex-start;
+      flex-wrap: nowrap;
+      min-width: min-content;
     }
-    .timeline-event {
-      position: relative;
-      z-index: 1;
-      flex: 1 1 130px;
-      min-width: 110px;
-      text-align: center;
-      padding-top: 30px;
+    .hist-year-item {
+      flex: 0 0 130px;
+      width: 130px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
     }
-    .timeline-dot {
-      position: absolute;
-      top: 8px;
-      left: 50%;
-      transform: translate(-50%, -50%);
+    .hist-year-dot {
       width: 15px;
       height: 15px;
       border-radius: 50%;
-      background: #1a5e3f;
-      border: 3px solid #fff;
-      box-shadow: 0 0 0 1px rgba(26,94,63,0.35);
+      background: #fff;
+      border: 3px solid #1a5e3f;
+      box-shadow: 0 0 0 1px rgba(26,94,63,0.15);
+      transition: background-color .25s ease;
     }
-    .timeline-event .t-date { color: #888; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; }
-    .timeline-event .t-ident { font-weight: 700; color: #1a3a5f; font-size: 16px; margin-top: 4px; }
-    .timeline-event .t-inst { color: #555; font-size: 13px; margin-top: 4px; }
+    .hist-year-item.is-filled .hist-year-dot {
+      background: #1a5e3f;
+    }
+    .hist-year-label {
+      margin-top: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #667085;
+      transition: color .25s ease, font-weight .25s ease, transform .25s ease;
+    }
+    .hist-year-item.is-hovered .hist-year-label {
+      color: #1a5e3f;
+      font-weight: 800;
+      font-size: 15px;
+      transform: scale(1.05);
+    }
+    .hist-segment {
+      flex: 0 0 60px;
+      width: 60px;
+      height: 3px;
+      margin-top: 6px;
+      background: rgba(26,94,63,0.28);
+      border-radius: 2px;
+      transition: background-color .25s ease;
+    }
+    .hist-segment.is-filled {
+      background: #1a5e3f;
+    }
+    .hist-timeline-list {
+      margin-top: 22px;
+      min-height: 24px;
+    }
+    .hist-list-item {
+      display: flex;
+      gap: 16px;
+      padding: 7px 2px;
+      border-bottom: 1px solid #eef1f4;
+    }
+    .hist-list-item:last-child { border-bottom: none; }
+    .hist-list-date {
+      flex: 0 0 46px;
+      color: #888;
+      font-size: 12px;
+      font-weight: 600;
+      padding-top: 2px;
+    }
+    .hist-list-ident { font-weight: 700; color: #1a3a5f; font-size: 14px; }
+    .hist-list-inst { color: #666; font-size: 13px; margin-top: 2px; }
   </style>
 </head>
 
@@ -985,7 +1013,7 @@
 
       <div class="panel" style="margin-top:14px;">
         <h3>Histórico de Formalização dos Instrumentos</h3>
-        <div class="filterHint">Os instrumentos são apresentados em ordem cronológica conforme a data de assinatura/formalização registrada na base de dados.</div>
+        <div class="filterHint">A linha do tempo apresenta os instrumentos agrupados conforme o ano de sua assinatura/formalização registrada na base de dados. Passe o cursor sobre cada ano para visualizar os instrumentos formalizados naquele período.</div>
         <div id="hist_timeline"></div>
       </div>
     </main>
@@ -1660,23 +1688,71 @@
 
       const years = Array.from(byYear.keys()).sort((a, b) => a - b);
 
-      timelineEl.innerHTML = years.map(y => {
-        const events = byYear.get(y).map(({ r, d }) => {
+      const yearItemsHtml = years.map((y, idx) => `
+        <div class="hist-year-item${idx === 0 ? " is-filled" : ""}" data-idx="${idx}">
+          <div class="hist-year-dot"></div>
+          <div class="hist-year-label">${y}</div>
+        </div>`);
+      const segmentsHtml = years.slice(0, -1).map((_, idx) => `<div class="hist-segment" data-idx="${idx}"></div>`);
+
+      let trackHtml = "";
+      yearItemsHtml.forEach((item, idx) => {
+        trackHtml += item;
+        if (segmentsHtml[idx]) trackHtml += segmentsHtml[idx];
+      });
+
+      timelineEl.innerHTML = `
+        <div class="hist-timeline-wrap">
+          <div class="hist-timeline-track">${trackHtml}</div>
+        </div>
+        <div class="hist-timeline-list" id="histTimelineList"></div>`;
+
+      const trackEl = timelineEl.querySelector(".hist-timeline-track");
+      const listEl = document.getElementById("histTimelineList");
+      const itemEls = Array.from(trackEl.querySelectorAll(".hist-year-item"));
+      const segmentEls = Array.from(trackEl.querySelectorAll(".hist-segment"));
+
+      function renderList(y) {
+        listEl.innerHTML = byYear.get(y).map(({ r, d }) => {
           const ident = getFirst(r, ["identificacao", "Identificação", "id_instrumento", "ID"]);
           const tipo  = getFirst(r, ["tipo_instrumento", "Tipo", "tipo"]);
           const inst  = getFirst(r, ["instituicao_parceira", "instituicao", "Instituição", "instituicao_parceira_nome"]);
-          const dataAssCurta = formatDateBR(d).slice(0, 5); // dd/mm — ano já é o cabeçalho da seção
+          const dataCurta = formatDateBR(d).slice(0, 5); // dd/mm
           const titulo = [tipo, ident].filter(Boolean).join(" ");
           return `
-            <div class="timeline-event">
-              <div class="timeline-dot"></div>
-              <div class="t-date">${escapeHTML(dataAssCurta)}</div>
-              <div class="t-ident">${escapeHTML(titulo || "—")}</div>
-              <div class="t-inst">${escapeHTML(inst || "—")}</div>
+            <div class="hist-list-item">
+              <div class="hist-list-date">${escapeHTML(dataCurta)}</div>
+              <div>
+                <div class="hist-list-ident">${escapeHTML(titulo || "—")}</div>
+                <div class="hist-list-inst">${escapeHTML(inst || "—")}</div>
+              </div>
             </div>`;
         }).join("");
-        return `<div class="timeline-year">${y}</div><div class="timeline-line">${events}</div>`;
-      }).join("");
+      }
+
+      function setState(hoverIdx) {
+        itemEls.forEach((el, idx) => {
+          el.classList.toggle("is-filled", hoverIdx === null ? idx === 0 : idx <= hoverIdx);
+          el.classList.toggle("is-hovered", hoverIdx !== null && idx === hoverIdx);
+        });
+        segmentEls.forEach((el, idx) => {
+          el.classList.toggle("is-filled", hoverIdx !== null && idx < hoverIdx);
+        });
+      }
+
+      itemEls.forEach((el, idx) => {
+        el.addEventListener("mouseenter", () => {
+          setState(idx);
+          renderList(years[idx]);
+        });
+      });
+
+      trackEl.addEventListener("mouseleave", () => {
+        setState(null);
+        listEl.innerHTML = "";
+      });
+
+      setState(null);
     }
 
     function buildHistorico(rows) {
