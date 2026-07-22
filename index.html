@@ -1,4 +1,4 @@
-2<!doctype html>
+<!doctype html>
 <html lang="pt-br">
 <head>
   <meta charset="utf-8" />
@@ -91,6 +91,7 @@
     .field{ margin: 10px 0; }
     .label{ font-size: 12px; color: var(--muted); margin-bottom: 4px; }
     .select{
+      box-sizing: border-box;
       width: 100%;
       padding: 9px 10px;
       border: 1px solid #ddd;
@@ -278,9 +279,9 @@
       width: 100%;
       border-collapse: collapse;
       table-layout: fixed;
-      min-width: 1100px;
     }
     .tbl th, .tbl td{
+      box-sizing: border-box;
       border-bottom:1px solid #eee;
       padding:10px 10px;
       font-size:13px;
@@ -311,6 +312,29 @@
 
     .tbl thead th:nth-child(10),
     .tbl tbody td:nth-child(10){ white-space: normal; word-break: break-word; }
+
+    .tbl tbody td:nth-child(6){ white-space: normal; }
+
+    /* Redistribuição de largura das colunas: tabela cabe 100% no container, sem rolagem horizontal */
+    .tbl th:nth-child(1),  .tbl td:nth-child(1)  { width: 8%; }
+    .tbl th:nth-child(2),  .tbl td:nth-child(2)  { width: 5%; }
+    .tbl th:nth-child(3),  .tbl td:nth-child(3)  { width: 22%; }
+    .tbl th:nth-child(4),  .tbl td:nth-child(4)  { width: 7%; }
+    .tbl th:nth-child(5),  .tbl td:nth-child(5)  { width: 7%; }
+    .tbl th:nth-child(6),  .tbl td:nth-child(6)  { width: 7%; }
+    .tbl th:nth-child(7),  .tbl td:nth-child(7)  { width: 6%; }
+    .tbl th:nth-child(8),  .tbl td:nth-child(8)  { width: 7%; }
+    .tbl th:nth-child(9),  .tbl td:nth-child(9)  { width: 5%; }
+    .tbl th:nth-child(10), .tbl td:nth-child(10) { width: 20%; }
+    .tbl th:nth-child(11), .tbl td:nth-child(11) { width: 6%; }
+    .tbl .js-toggle {
+      min-width: 0;
+      width: 56px;
+      padding: 6px 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
 
     .detailsRow td{ background:#fff; }
     .detailsBox{
@@ -596,6 +620,77 @@
       white-space: nowrap !important;
     }
     .geo-label::before { display: none !important; }
+
+    /* Navegação entre Painel Operacional e Indicadores Históricos */
+    .view-tabs {
+      display: flex;
+      gap: 24px;
+      margin: 10px 0 16px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .view-tab {
+      appearance: none;
+      background: transparent;
+      border: none;
+      border-bottom: 3px solid transparent;
+      padding: 8px 2px 10px 2px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #777;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .view-tab:hover { color: #1a1a2e; }
+    .view-tab.active { color: #1a1a2e; border-bottom-color: #1a5e3f; }
+
+    /* Histórico de Formalização dos Instrumentos (timeline horizontal por ano) */
+    .timeline-year {
+      margin: 36px 0 20px 0;
+      font-size: 20px;
+      font-weight: 700;
+      color: #1a5e3f;
+    }
+    .timeline-year:first-child { margin-top: 8px; }
+    .timeline-line {
+      position: relative;
+      display: flex;
+      gap: 32px;
+      overflow-x: auto;
+      padding: 8px 6px 10px 6px;
+    }
+    .timeline-line::before {
+      content: "";
+      position: absolute;
+      top: 16px;
+      left: 6px;
+      right: 6px;
+      height: 3px;
+      background: rgba(26,94,63,0.28);
+      border-radius: 2px;
+    }
+    .timeline-event {
+      position: relative;
+      z-index: 1;
+      flex: 1 1 130px;
+      min-width: 110px;
+      text-align: center;
+      padding-top: 30px;
+    }
+    .timeline-dot {
+      position: absolute;
+      top: 8px;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      background: #1a5e3f;
+      border: 3px solid #fff;
+      box-shadow: 0 0 0 1px rgba(26,94,63,0.35);
+    }
+    .timeline-event .t-date { color: #888; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; }
+    .timeline-event .t-ident { font-weight: 700; color: #1a3a5f; font-size: 16px; margin-top: 4px; }
+    .timeline-event .t-inst { color: #555; font-size: 13px; margin-top: 4px; }
   </style>
 </head>
 
@@ -638,7 +733,12 @@
     </div>
   </header>
 
-  <div class="layout">
+  <nav class="view-tabs" role="tablist" aria-label="Navegação do painel">
+    <button type="button" id="tabBtnOperacional" class="view-tab active" role="tab" aria-selected="true">Operacional</button>
+    <button type="button" id="tabBtnHistorico" class="view-tab" role="tab" aria-selected="false">Indicadores Históricos</button>
+  </nav>
+
+  <div class="layout" id="viewOperacional">
     <aside class="sidebar">
       <div class="field">
         <input id="quickSearch" class="select" placeholder="Pesquisar instrumento, instituição, diretoria ou processo..." />
@@ -860,6 +960,33 @@
           </div>
         </details>
 
+      </div>
+    </main>
+  </div>
+
+  <div class="layout" id="viewHistorico" style="display:none;">
+    <main class="main" style="flex:1;">
+      <div class="panel">
+        <h3>Indicadores Históricos</h3>
+        <div class="filterHint">Visão institucional consolidada a partir dos instrumentos já carregados no painel — não reflete os filtros da aba Operacional.</div>
+      </div>
+
+      <div class="row" style="margin-top:14px;">
+        <div class="panel">
+          <h3>Evolução anual dos instrumentos</h3>
+          <div id="chart_hist_evolucao"></div>
+        </div>
+
+        <div class="panel">
+          <h3>Instrumentos por tipo</h3>
+          <div id="chart_hist_tipo"></div>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top:14px;">
+        <h3>Histórico de Formalização dos Instrumentos</h3>
+        <div class="filterHint">Os instrumentos são apresentados em ordem cronológica conforme a data de assinatura/formalização registrada na base de dados.</div>
+        <div id="hist_timeline"></div>
       </div>
     </main>
   </div>
@@ -1134,6 +1261,11 @@
     const kpi_alerta = document.getElementById("kpi_alerta");
     const kpi_critico = document.getElementById("kpi_critico");
     const kpi_concluidos = document.getElementById("kpi_concluidos");
+
+    const tabBtnOperacionalEl = document.getElementById("tabBtnOperacional");
+    const tabBtnHistoricoEl   = document.getElementById("tabBtnHistorico");
+    const viewOperacionalEl   = document.getElementById("viewOperacional");
+    const viewHistoricoEl     = document.getElementById("viewHistorico");
 
     // =========================
     // Filtros (populate)
@@ -1422,6 +1554,150 @@
         yaxis: { automargin: true }
       }, { displayModeBar:false, responsive:true });
     }
+
+    // =========================
+    // Indicadores Históricos (Seção 1, 2 e 3)
+    // Reutiliza getFirst, parseDateAny, formatDateBR, escapeHTML e computeStatus
+    // já existentes — apenas agrega os mesmos dados de tbl sob outro recorte.
+    // =========================
+    function getAssinaturaDate(r) {
+      return parseDateAny(getFirst(r, ["data_da_assinatura", "Data da Assinatura", "data_assinatura"]));
+    }
+
+    function buildHistEvolucaoChart(rows) {
+      const base = (rows || []).filter(r => computeStatus(r) !== "ARQUIVADO");
+      const byYear = new Map();
+      base.forEach(r => {
+        const d = getAssinaturaDate(r);
+        if (!d) return;
+        const y = d.getFullYear();
+        byYear.set(y, (byYear.get(y) || 0) + 1);
+      });
+
+      const chartEl = document.getElementById("chart_hist_evolucao");
+      if (byYear.size === 0) {
+        Plotly.purge(chartEl);
+        chartEl.innerHTML = `<div class="muted">Sem datas de assinatura para plotar.</div>`;
+        return;
+      }
+
+      const years = Array.from(byYear.keys()).sort((a, b) => a - b);
+      const values = years.map(y => byYear.get(y));
+
+      Plotly.newPlot(chartEl, [{
+        type: "scatter",
+        mode: "lines+markers",
+        x: years,
+        y: values,
+        line: { color: "#1a5e3f", width: 2 },
+        marker: { color: "#1a5e3f", size: 7 },
+        hovertemplate: "<b>%{x}</b><br>Instrumentos firmados: %{y}<extra></extra>"
+      }], {
+        height: 320,
+        margin: { t: 10, r: 20, b: 40, l: 40 },
+        xaxis: { title: "Ano da assinatura", dtick: 1 },
+        yaxis: { title: "Quantidade", rangemode: "tozero" }
+      }, { displayModeBar: false, responsive: true });
+    }
+
+    function buildHistTipoChart(rows) {
+      const base = (rows || []).filter(r => computeStatus(r) !== "ARQUIVADO");
+      const byTipo = new Map();
+      base.forEach(r => {
+        const t = String(getFirst(r, ["tipo_instrumento", "Tipo", "tipo"]) || "").trim();
+        if (!t) return;
+        byTipo.set(t, (byTipo.get(t) || 0) + 1);
+      });
+
+      const chartEl = document.getElementById("chart_hist_tipo");
+      if (byTipo.size === 0) {
+        Plotly.purge(chartEl);
+        chartEl.innerHTML = `<div class="muted">Sem dados de tipo para plotar.</div>`;
+        return;
+      }
+
+      const items = Array.from(byTipo.entries()).sort((a, b) => b[1] - a[1]);
+      const x = items.map(([t]) => t);
+      const y = items.map(([, count]) => count);
+
+      Plotly.newPlot(chartEl, [{
+        type: "bar",
+        x,
+        y,
+        marker: { color: "#6b7280" },
+        text: y.map(v => String(v)),
+        textposition: "outside",
+        cliponaxis: false,
+        hovertemplate: "<b>%{x}</b><br>Instrumentos: %{y}<extra></extra>",
+        showlegend: false
+      }], {
+        height: 320,
+        margin: { t: 20, r: 20, b: 40, l: 40 },
+        xaxis: { automargin: true },
+        yaxis: { title: "Quantidade", rangemode: "tozero" }
+      }, { displayModeBar: false, responsive: true });
+    }
+
+    function buildHistTimeline(rows) {
+      const base = (rows || []).filter(r => computeStatus(r) !== "ARQUIVADO");
+      const withDate = base
+        .map(r => ({ r, d: getAssinaturaDate(r) }))
+        .filter(x => x.d)
+        .sort((a, b) => a.d - b.d);
+
+      const timelineEl = document.getElementById("hist_timeline");
+      if (withDate.length === 0) {
+        timelineEl.innerHTML = `<div class="muted">Sem datas de assinatura para montar a linha do tempo.</div>`;
+        return;
+      }
+
+      const byYear = new Map();
+      withDate.forEach(({ r, d }) => {
+        const y = d.getFullYear();
+        if (!byYear.has(y)) byYear.set(y, []);
+        byYear.get(y).push({ r, d });
+      });
+
+      const years = Array.from(byYear.keys()).sort((a, b) => a - b);
+
+      timelineEl.innerHTML = years.map(y => {
+        const events = byYear.get(y).map(({ r, d }) => {
+          const ident = getFirst(r, ["identificacao", "Identificação", "id_instrumento", "ID"]);
+          const tipo  = getFirst(r, ["tipo_instrumento", "Tipo", "tipo"]);
+          const inst  = getFirst(r, ["instituicao_parceira", "instituicao", "Instituição", "instituicao_parceira_nome"]);
+          const dataAssCurta = formatDateBR(d).slice(0, 5); // dd/mm — ano já é o cabeçalho da seção
+          const titulo = [tipo, ident].filter(Boolean).join(" ");
+          return `
+            <div class="timeline-event">
+              <div class="timeline-dot"></div>
+              <div class="t-date">${escapeHTML(dataAssCurta)}</div>
+              <div class="t-ident">${escapeHTML(titulo || "—")}</div>
+              <div class="t-inst">${escapeHTML(inst || "—")}</div>
+            </div>`;
+        }).join("");
+        return `<div class="timeline-year">${y}</div><div class="timeline-line">${events}</div>`;
+      }).join("");
+    }
+
+    function buildHistorico(rows) {
+      buildHistEvolucaoChart(rows);
+      buildHistTipoChart(rows);
+      buildHistTimeline(rows);
+    }
+
+    function showView(view) {
+      const isHist = view === "historico";
+      viewOperacionalEl.style.display = isHist ? "none" : "";
+      viewHistoricoEl.style.display   = isHist ? "" : "none";
+      tabBtnOperacionalEl.classList.toggle("active", !isHist);
+      tabBtnHistoricoEl.classList.toggle("active", isHist);
+      tabBtnOperacionalEl.setAttribute("aria-selected", String(!isHist));
+      tabBtnHistoricoEl.setAttribute("aria-selected", String(isHist));
+      if (isHist) buildHistorico(tbl);
+    }
+
+    tabBtnOperacionalEl.addEventListener("click", () => showView("operacional"));
+    tabBtnHistoricoEl.addEventListener("click", () => showView("historico"));
 
     function buildBrazilMap(rows) {
       rows = (rows || []).filter(r => computeStatus(r) !== "ARQUIVADO");
