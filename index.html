@@ -838,20 +838,20 @@
       <h4>Filtros<span id="filterCount" style="font-size:12px; font-weight:400; color:#666;"></span></h4>
 
       <div class="field">
-        <div class="label">Ano</div>
+        <div class="label">Ano de início da vigência</div>
         <div class="filterHint" style="margin-bottom:6px;">É possível selecionar um ou mais anos.</div>
         <div class="multiselect" id="yearMultiselect">
           <button type="button" id="yearMultiselectBtn" class="select multiselect-btn">Todos</button>
-          <div id="yearMultiselectPanel" class="multiselect-panel" hidden>
-            <div class="multiselect-option" data-year="2023">2023</div>
-            <div class="multiselect-option" data-year="2024">2024</div>
-            <div class="multiselect-option" data-year="2025">2025</div>
-            <div class="multiselect-option" data-year="2026">2026</div>
-            <div class="multiselect-option" data-year="2027">2027</div>
-            <div class="multiselect-option" data-year="2028">2028</div>
-            <div class="multiselect-option" data-year="2029">2029</div>
-            <div class="multiselect-option" data-year="2030">2030</div>
-          </div>
+          <div id="yearMultiselectPanel" class="multiselect-panel" hidden></div>
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="label">Ano de encerramento</div>
+        <div class="filterHint" style="margin-bottom:6px;">É possível selecionar um ou mais anos.</div>
+        <div class="multiselect" id="yearEndMultiselect">
+          <button type="button" id="yearEndMultiselectBtn" class="select multiselect-btn">Todos</button>
+          <div id="yearEndMultiselectPanel" class="multiselect-panel" hidden></div>
         </div>
       </div>
 
@@ -1322,6 +1322,7 @@
     let tbl = [];
     let activeMonth = null;
     let selectedYears = new Set();
+    let selectedEndYears = new Set();
     let lastActiveRows = [];
     let lastConclRows  = [];
 
@@ -1338,6 +1339,9 @@
     const yearMultiselectEl = document.getElementById("yearMultiselect");
     const yearMultiselectBtnEl = document.getElementById("yearMultiselectBtn");
     const yearMultiselectPanelEl = document.getElementById("yearMultiselectPanel");
+    const yearEndMultiselectEl = document.getElementById("yearEndMultiselect");
+    const yearEndMultiselectBtnEl = document.getElementById("yearEndMultiselectBtn");
+    const yearEndMultiselectPanelEl = document.getElementById("yearEndMultiselectPanel");
     const filterTipoEl = document.getElementById("filterTipo");
     const filterStatusEl = document.getElementById("filterStatus");
     const filterInstEl = document.getElementById("filterInst");
@@ -1391,6 +1395,31 @@
       filterUFEl.innerHTML =
         `<option value="">Todas</option>` +
         ufsSorted.map(uf => `<option value="${uf}">${uf}</option>`).join("");
+
+      // Ano institucional do instrumento — regra oficial: vigencia_inicio (não vigencia_termino).
+      // Registros sem vigencia_inicio preenchida são simplesmente ignorados na geração das opções.
+      const anos = new Set();
+      rows.forEach(r => {
+        const rawInicio = getFirst(r, ["vigencia_inicio","VIGÊNCIA - INÍCIO","inicio","Inicio"]);
+        const d = parseDateAny(rawInicio);
+        if (d) anos.add(String(d.getFullYear()));
+      });
+      const anosSorted = Array.from(anos).sort();
+      yearMultiselectPanelEl.innerHTML =
+        anosSorted.map(y => `<div class="multiselect-option" data-year="${y}">${y}</div>`).join("");
+      wireYearMultiselectOptions();
+
+      // Ano de encerramento — regra oficial: vigencia_termino (não vigencia_inicio).
+      const anosEncerramento = new Set();
+      rows.forEach(r => {
+        const rawVenc = getFirst(r, ["vigencia_termino","VIGÊNCIA - TÉRMINO","vencimento","Vencimento","vigencia_fim"]);
+        const d = parseDateAny(rawVenc);
+        if (d) anosEncerramento.add(String(d.getFullYear()));
+      });
+      const anosEncerramentoSorted = Array.from(anosEncerramento).sort();
+      yearEndMultiselectPanelEl.innerHTML =
+        anosEncerramentoSorted.map(y => `<div class="multiselect-option" data-year="${y}">${y}</div>`).join("");
+      wireYearEndMultiselectOptions();
     }
 
     // =========================
@@ -1409,7 +1438,10 @@
         const venc   = formatDateBR(getFirst(r, ["vigencia_termino","VIGÊNCIA - TÉRMINO","vencimento","Vencimento","vigencia_fim"]));
 
         const stat  = computeStatus(r);
-        const statCell = stat === "SEM DATA" ? `<span class="badge-semdata">SEM DATA</span>` : escapeHTML(stat || "—");
+        // Apresentação apenas: instrumento já concluído (vigencia_termino no passado) exibe "VENCIDO"
+        // em vez do rótulo de prazo futuro. Não altera computeStatus, KPIs, filtros nem exportação CSV.
+        const statDisplay = (isConcluido(r) && stat !== "SEM DATA" && stat !== "ARQUIVADO") ? "VENCIDO" : stat;
+        const statCell = stat === "SEM DATA" ? `<span class="badge-semdata">SEM DATA</span>` : escapeHTML(statDisplay || "—");
         const diretoria = getFirst(r, ["diretoria_responsavel", "Diretoria", "setor_lotacao", "Setor", "setor"]);
         const gerencia  = getFirst(r, ["gerencia_responsavel", "Gerência", "gerencia"]);
 
@@ -1658,14 +1690,24 @@
       return parseDateAny(getFirst(r, ["data_da_assinatura", "Data da Assinatura", "data_assinatura"]));
     }
 
+    // Regra oficial de Histórico: prioridade data_assinatura; na ausência, usa
+    // apenas o ANO de vigencia_inicio como referência subsidiária (nunca inventa
+    // dia/mês de assinatura). assinaturaConhecida=false sinaliza a UI a diferenciar.
+    function getHistEntry(r) {
+      const da = getAssinaturaDate(r);
+      if (da) return { year: da.getFullYear(), sortDate: da, assinaturaConhecida: true, date: da };
+      const vi = parseDateAny(getFirst(r, ["vigencia_inicio", "VIGÊNCIA - INÍCIO", "inicio", "Inicio"]));
+      if (vi) return { year: vi.getFullYear(), sortDate: vi, assinaturaConhecida: false, date: null };
+      return null;
+    }
+
     function buildHistEvolucaoChart(rows) {
       const base = (rows || []).filter(r => computeStatus(r) !== "ARQUIVADO");
       const byYear = new Map();
       base.forEach(r => {
-        const d = getAssinaturaDate(r);
-        if (!d) return;
-        const y = d.getFullYear();
-        byYear.set(y, (byYear.get(y) || 0) + 1);
+        const entry = getHistEntry(r);
+        if (!entry) return;
+        byYear.set(entry.year, (byYear.get(entry.year) || 0) + 1);
       });
 
       const chartEl = document.getElementById("chart_hist_evolucao");
@@ -1737,9 +1779,9 @@
     function buildHistTimeline(rows) {
       const base = (rows || []).filter(r => computeStatus(r) !== "ARQUIVADO");
       const withDate = base
-        .map(r => ({ r, d: getAssinaturaDate(r) }))
-        .filter(x => x.d)
-        .sort((a, b) => a.d - b.d);
+        .map(r => ({ r, entry: getHistEntry(r) }))
+        .filter(x => x.entry)
+        .sort((a, b) => a.entry.sortDate - b.entry.sortDate);
 
       const timelineEl = document.getElementById("hist_timeline");
       if (withDate.length === 0) {
@@ -1748,10 +1790,10 @@
       }
 
       const byYear = new Map();
-      withDate.forEach(({ r, d }) => {
-        const y = d.getFullYear();
+      withDate.forEach(({ r, entry }) => {
+        const y = entry.year;
         if (!byYear.has(y)) byYear.set(y, []);
-        byYear.get(y).push({ r, d });
+        byYear.get(y).push({ r, entry });
       });
 
       const years = Array.from(byYear.keys()).sort((a, b) => a - b);
@@ -1781,18 +1823,25 @@
       const segmentEls = Array.from(trackEl.querySelectorAll(".hist-segment"));
 
       function renderList(y) {
-        listEl.innerHTML = byYear.get(y).map(({ r, d }) => {
+        listEl.innerHTML = byYear.get(y).map(({ r, entry }) => {
           const ident = getFirst(r, ["identificacao", "Identificação", "id_instrumento", "ID"]);
           const tipo  = getFirst(r, ["tipo_instrumento", "Tipo", "tipo"]);
           const inst  = getFirst(r, ["instituicao_parceira", "instituicao", "Instituição", "instituicao_parceira_nome"]);
-          const dataCurta = formatDateBR(d).slice(0, 5); // dd/mm
           const titulo = [tipo, ident].filter(Boolean).join(" ");
+          // dia/mês só quando a data_assinatura é conhecida; sem ela, mostra apenas o ano
+          // e sinaliza discretamente a origem (vigencia_inicio) — nunca inventa dia/mês de assinatura
+          const dataCell = entry.assinaturaConhecida
+            ? escapeHTML(formatDateBR(entry.date).slice(0, 5))
+            : String(entry.year);
+          const semAssinaturaHint = entry.assinaturaConhecida
+            ? ""
+            : `<br><span class="muted" style="font-size:11px;">Assinatura não registrada — ano baseado no início da vigência</span>`;
           return `
             <div class="hist-list-item">
-              <div class="hist-list-date">${escapeHTML(dataCurta)}</div>
+              <div class="hist-list-date">${dataCell}</div>
               <div>
                 <div class="hist-list-ident">${escapeHTML(titulo || "—")}</div>
-                <div class="hist-list-inst">${escapeHTML(inst || "—")}</div>
+                <div class="hist-list-inst">${escapeHTML(inst || "—")}${semAssinaturaHint}</div>
               </div>
             </div>`;
         }).join("");
@@ -2086,10 +2135,18 @@
         }
         if (selectedYears.size > 0) {
           rows = rows.filter(r => {
+            const rawInicio = getFirst(r, ["vigencia_inicio","VIGÊNCIA - INÍCIO","inicio","Inicio"]);
+            const d = parseDateAny(rawInicio);
+            if (!d) return false;
+            return selectedYears.has(String(d.getFullYear()));
+          });
+        }
+        if (selectedEndYears.size > 0) {
+          rows = rows.filter(r => {
             const rawVenc = getFirst(r, ["vigencia_termino","VIGÊNCIA - TÉRMINO","vencimento","Vencimento","vigencia_fim"]);
             const d = parseDateAny(rawVenc);
             if (!d) return false;
-            return selectedYears.has(String(d.getFullYear()));
+            return selectedEndYears.has(String(d.getFullYear()));
           });
         }
         if (tipo)      rows = rows.filter(r => String(getFirst(r, ["tipo_instrumento","Tipo","tipo"]) || "").trim() === tipo);
@@ -2133,13 +2190,13 @@
       render(conclRows,  tbodyConclEl);
       updateKPIs(activeRows, conclRows);
 
-      const anyFilter = Boolean(activeMonth || qq || selectedYears.size > 0 || tipo || statusSel || instSel || ufSel);
+      const anyFilter = Boolean(activeMonth || qq || selectedYears.size > 0 || selectedEndYears.size > 0 || tipo || statusSel || instSel || ufSel);
 
       activeCountLabelEl.textContent = anyFilter
         ? `Exibindo ${activeRows.length} de ${activeBase.length} instrumentos`
         : `Exibindo todos os ${activeBase.length} instrumentos`;
 
-      const filterCount = [activeMonth, selectedYears.size > 0, tipo, instSel, ufSel, statusSel].filter(Boolean).length;
+      const filterCount = [activeMonth, selectedYears.size > 0, selectedEndYears.size > 0, tipo, instSel, ufSel, statusSel].filter(Boolean).length;
       filterCountEl.textContent = filterCount > 0 ? ` • ${filterCount} ativo${filterCount === 1 ? "" : "s"}` : "";
 
       if (anyFilter) {
@@ -2152,7 +2209,8 @@
 
       const hints = [];
       if (activeMonth) hints.push(`mês: ${activeMonth}`);
-      if (selectedYears.size > 0) hints.push(`ano: ${Array.from(selectedYears).sort().join(", ")}`);
+      if (selectedYears.size > 0) hints.push(`ano de início: ${Array.from(selectedYears).sort().join(", ")}`);
+      if (selectedEndYears.size > 0) hints.push(`ano de encerramento: ${Array.from(selectedEndYears).sort().join(", ")}`);
       if (tipo)        hints.push(`tipo: ${tipo}`);
       if (instSel)     hints.push(`instituição: ${instSel}`);
       if (ufSel)       hints.push(`UF: ${ufSel}`);
@@ -2172,6 +2230,8 @@
       quickSearchEl.value = "";
       selectedYears.clear();
       updateYearMultiselectUI();
+      selectedEndYears.clear();
+      updateYearEndMultiselectUI();
       filterTipoEl.value = "";
       filterStatusEl.value = "";
       filterInstEl.value = "";
@@ -2196,23 +2256,62 @@
       }
     }
 
+    function wireYearMultiselectOptions() {
+      yearMultiselectPanelEl.querySelectorAll(".multiselect-option").forEach(opt => {
+        opt.addEventListener("click", () => {
+          const y = opt.dataset.year;
+          if (selectedYears.has(y)) selectedYears.delete(y);
+          else selectedYears.add(y);
+          updateYearMultiselectUI();
+          applyFilters();
+        });
+      });
+      updateYearMultiselectUI();
+    }
+
     yearMultiselectBtnEl.addEventListener("click", () => {
       yearMultiselectPanelEl.hidden = !yearMultiselectPanelEl.hidden;
     });
 
-    yearMultiselectPanelEl.querySelectorAll(".multiselect-option").forEach(opt => {
-      opt.addEventListener("click", () => {
-        const y = opt.dataset.year;
-        if (selectedYears.has(y)) selectedYears.delete(y);
-        else selectedYears.add(y);
-        updateYearMultiselectUI();
-        applyFilters();
+    // =========================
+    // Filtro Ano de encerramento — multiseleção
+    // =========================
+    function updateYearEndMultiselectUI() {
+      yearEndMultiselectPanelEl.querySelectorAll(".multiselect-option").forEach(opt => {
+        opt.classList.toggle("selected", selectedEndYears.has(opt.dataset.year));
       });
+      if (selectedEndYears.size === 0) {
+        yearEndMultiselectBtnEl.textContent = "Todos";
+      } else if (selectedEndYears.size <= 3) {
+        yearEndMultiselectBtnEl.textContent = Array.from(selectedEndYears).sort().join(" • ");
+      } else {
+        yearEndMultiselectBtnEl.textContent = `${selectedEndYears.size} anos selecionados`;
+      }
+    }
+
+    function wireYearEndMultiselectOptions() {
+      yearEndMultiselectPanelEl.querySelectorAll(".multiselect-option").forEach(opt => {
+        opt.addEventListener("click", () => {
+          const y = opt.dataset.year;
+          if (selectedEndYears.has(y)) selectedEndYears.delete(y);
+          else selectedEndYears.add(y);
+          updateYearEndMultiselectUI();
+          applyFilters();
+        });
+      });
+      updateYearEndMultiselectUI();
+    }
+
+    yearEndMultiselectBtnEl.addEventListener("click", () => {
+      yearEndMultiselectPanelEl.hidden = !yearEndMultiselectPanelEl.hidden;
     });
 
     document.addEventListener("click", (e) => {
       if (!yearMultiselectEl.contains(e.target)) {
         yearMultiselectPanelEl.hidden = true;
+      }
+      if (!yearEndMultiselectEl.contains(e.target)) {
+        yearEndMultiselectPanelEl.hidden = true;
       }
     });
 
@@ -2419,10 +2518,10 @@
 
       tbl = parsed;
 
-      populateFilterOptions(tbl);
-
-      // gráficos usam base completa (mas sem arquivados)
+      // gráficos e filtros usam base completa (mas sem arquivados)
       const baseCharts = tbl.filter(r => computeStatus(r) !== "ARQUIVADO");
+      populateFilterOptions(baseCharts);
+
       buildStatusDonut(baseCharts);
       buildVencBar(baseCharts);
       buildBrazilMap(baseCharts);
