@@ -17,6 +17,12 @@ OUT_LOG = DATA_DIR / "resumo_execucao.json"
 OUT_ALERTA_180 = DATA_DIR / "alertas_180.csv"
 OUT_ALERTA_60 = DATA_DIR / "alertas_60.csv"
 
+# Limiares de prazo (fonte única — e-mail/monitoramento)
+# ATENÇÃO: manter em sincronia com index.html (PRAZO_CRITICO_DIAS / PRAZO_ALERTA_DIAS).
+# Alterar a política de prazos em AMBOS os arquivos.
+PRAZO_CRITICO_DIAS = 60   # <= 60 dias  -> faixa crítica
+PRAZO_ALERTA_DIAS = 180   # <= 180 dias -> faixa de atenção
+
 DATE_COLS_END = ["vigencia_termino", "VIGÊNCIA - TÉRMINO", "vencimento", "Vencimento", "vigencia_fim", "vigência_término"]
 DATE_COLS_START = ["vigencia_inicio", "VIGÊNCIA - INÍCIO", "inicio", "Inicio", "vigência_início"]
 
@@ -154,10 +160,10 @@ def main() -> int:
             continue
 
         # classificação conforme seu modelo
-        if dias <= 60:
+        if dias <= PRAZO_CRITICO_DIAS:
             critica_ate_60 += 1
             alertas_60_rows.append(r)
-        elif dias <= 180:
+        elif dias <= PRAZO_ALERTA_DIAS:
             atencao_61_180 += 1
             alertas_180_rows.append(r)
         else:
