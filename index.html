@@ -833,7 +833,7 @@
   <div class="layout" id="viewOperacional">
     <aside class="sidebar">
       <div class="field">
-        <input id="quickSearch" class="select" placeholder="Pesquisar instrumento, instituição, diretoria ou processo..." />
+        <input id="quickSearch" class="select" type="search" role="searchbox" aria-label="Pesquisar instrumentos por identificação, instituição, diretoria ou processo" placeholder="Pesquisar instrumento, instituição, diretoria ou processo..." />
       </div>
 
       <h4>Filtros<span id="filterCount" style="font-size:12px; font-weight:400; color:#666;"></span></h4>
@@ -842,8 +842,8 @@
         <div class="label">Ano de início da vigência</div>
         <div class="filterHint" style="margin-bottom:6px;">É possível selecionar um ou mais anos.</div>
         <div class="multiselect" id="yearMultiselect">
-          <button type="button" id="yearMultiselectBtn" class="select multiselect-btn">Todos</button>
-          <div id="yearMultiselectPanel" class="multiselect-panel" hidden></div>
+          <button type="button" id="yearMultiselectBtn" class="select multiselect-btn" aria-haspopup="listbox" aria-expanded="false" aria-label="Filtrar por ano de início da vigência">Todos</button>
+          <div id="yearMultiselectPanel" class="multiselect-panel" role="listbox" aria-multiselectable="true" aria-label="Anos de início da vigência" hidden></div>
         </div>
       </div>
 
@@ -851,35 +851,35 @@
         <div class="label">Ano de encerramento</div>
         <div class="filterHint" style="margin-bottom:6px;">É possível selecionar um ou mais anos.</div>
         <div class="multiselect" id="yearEndMultiselect">
-          <button type="button" id="yearEndMultiselectBtn" class="select multiselect-btn">Todos</button>
-          <div id="yearEndMultiselectPanel" class="multiselect-panel" hidden></div>
+          <button type="button" id="yearEndMultiselectBtn" class="select multiselect-btn" aria-haspopup="listbox" aria-expanded="false" aria-label="Filtrar por ano de encerramento">Todos</button>
+          <div id="yearEndMultiselectPanel" class="multiselect-panel" role="listbox" aria-multiselectable="true" aria-label="Anos de encerramento" hidden></div>
         </div>
       </div>
 
       <div class="field">
         <div class="label">Tipo de instrumento</div>
-        <select id="filterTipo" class="select">
+        <select id="filterTipo" class="select" aria-label="Filtrar por tipo de instrumento">
           <option value="">Todos</option>
         </select>
       </div>
 
       <div class="field">
         <div class="label">Instituição Parceira</div>
-        <select id="filterInst" class="select">
+        <select id="filterInst" class="select" aria-label="Filtrar por instituição parceira">
           <option value="">Todas</option>
         </select>
       </div>
 
       <div class="field">
         <div class="label">UF</div>
-        <select id="filterUF" class="select">
+        <select id="filterUF" class="select" aria-label="Filtrar por unidade federativa (UF)">
           <option value="">Todas</option>
         </select>
       </div>
 
       <div class="field">
         <div class="label">Status</div>
-        <select id="filterStatus" class="select">
+        <select id="filterStatus" class="select" aria-label="Filtrar por status de vigência">
           <option value="">Todos</option>
           <option value="VIGENTE">VIGENTE</option>
           <option value="ALERTA 180 DIAS">ATENÇÃO (61–180 dias)</option>
@@ -1192,6 +1192,47 @@
     const CSV_URL = "./data/tbl_instrumentos.csv";
 
     // =========================
+    // Limiares de prazo (fonte única — painel)
+    // ATENÇÃO: manter em sincronia com scripts/monitor_act.py (constantes de mesmo nome).
+    // Alterar a política de prazos em AMBOS os arquivos.
+    // =========================
+    const PRAZO_CRITICO_DIAS = 60;   // <= 60 dias  -> CRÍTICO 60 DIAS
+    const PRAZO_ALERTA_DIAS  = 180;  // <= 180 dias -> ALERTA 180 DIAS
+
+    // =========================
+    // SCHEMA de campos (fonte única de aliases de coluna do CSV)
+    // Cada conceito de negócio mapeia para a lista de nomes de coluna aceitos,
+    // em ordem de prioridade (getFirst usa o primeiro não-vazio).
+    // idDisplay = identidade de EXIBIÇÃO; idDedup = identidade de DEDUPLICAÇÃO
+    // (inclui numero_processo). São conceitos DISTINTOS — não unir.
+    // =========================
+    const CAMPOS = {
+      termino: ["vigencia_termino","VIGÊNCIA - TÉRMINO","vencimento","Vencimento","vigencia_fim"],
+      inicio: ["vigencia_inicio","VIGÊNCIA - INÍCIO","inicio","Inicio"],
+      instituicao: ["instituicao_parceira","instituicao","Instituição","instituicao_parceira_nome"],
+      tipo: ["tipo_instrumento","Tipo","tipo"],
+      idDisplay: ["identificacao","Identificação","id_instrumento","ID"],
+      idDedup: ["id_instrumento","ID","identificacao","Identificação","numero_processo","Processo","processo"],
+      processo: ["numero_processo","Processo","processo"],
+      diretoria: ["diretoria_responsavel","Diretoria","setor_lotacao","Setor","setor"],
+      gerencia: ["gerencia_responsavel","Gerência","gerencia"],
+      possuiAditivo: ["possui_aditivo","aditivo","Aditivo"],
+      qtdAditivos: ["quantos_aditivos","Qtd Aditivos","qtd_aditivos"],
+      uf: ["uf","UF","estado_uf","uf_parceiro"],
+      estado: ["estado","Estado"],
+      arquivado: ["arquivado","Arquivado","status_geral","Status Geral","status"],
+      statusVigencia: ["status_vigencia","status_vencimento","Status","status"],
+      coordParceiro: ["coordenador_parceiro","coord_parceiro","coordenador_parceiro_nome"],
+      coordFvs: ["coordenador_fvsrcp","resp_fvs","responsavel_fvs"],
+      repasse: ["repasse_financeiro","repasse","valor_repasse"],
+      dataAssinatura: ["data_da_assinatura","Data da Assinatura","data_assinatura"],
+      publicacaoDoe: ["publicacao_doe","Publicação DOE","numero_extrato_publicado","numero_extrato_publicacao","extrato_publicacao","Extrato (nº)","extrato"],
+      linkDoe: ["link_publicacao_doe","link_doe","publicacao_doe_link"],
+      objetivo: ["objetivo_resumido","objetivo_geral","objeto","Objeto"],
+      produtos: ["produtos_gerados","produtos_gerados.1","produtos","Produtos"]
+    };
+
+    // =========================
     // Helpers
     // =========================
     function escapeHTML(s) {
@@ -1264,13 +1305,13 @@
     }
 
     function getUF(r) {
-      const ufRaw = getFirst(r, ["uf","UF","estado_uf","uf_parceiro"]);
+      const ufRaw = getFirst(r, CAMPOS.uf);
       const uf = String(ufRaw || "").trim().toUpperCase();
       return /^[A-Z]{2}$/.test(uf) ? uf : "";
     }
 
     function isArquivado(r) {
-      const raw = String(getFirst(r, ["arquivado","Arquivado","status_geral","Status Geral","status"]) || "")
+      const raw = String(getFirst(r, CAMPOS.arquivado) || "")
         .trim().toUpperCase();
       return raw === "SIM" || raw === "S" || raw === "1" || raw === "TRUE" || raw.includes("ARQUIV");
     }
@@ -1278,18 +1319,18 @@
     function computeStatus(r) {
       if (isArquivado(r)) return "ARQUIVADO";
 
-      const stat = String(getFirst(r, ["status_vigencia","status_vencimento","Status","status"]) || "").toUpperCase();
+      const stat = String(getFirst(r, CAMPOS.statusVigencia) || "").toUpperCase();
       if (stat.includes("SEM DATA") || stat.includes("SEMDATA")) return "SEM DATA";
       if (stat.includes("ALERTA")) return "ALERTA 180 DIAS";
       if (stat.includes("VIGENTE")) return "VIGENTE";
 
-      const rawVenc = getFirst(r, ["vigencia_termino","VIGÊNCIA - TÉRMINO","vencimento","Vencimento","vigencia_fim"]);
+      const rawVenc = getFirst(r, CAMPOS.termino);
       const d = parseDateAny(rawVenc);
       if (!d) return "SEM DATA";
 
       const diffDays = Math.ceil((d - new Date()) / (1000*60*60*24));
-      if (diffDays <= 60)  return "CRÍTICO 60 DIAS";
-      if (diffDays <= 180) return "ALERTA 180 DIAS";
+      if (diffDays <= PRAZO_CRITICO_DIAS) return "CRÍTICO 60 DIAS";
+      if (diffDays <= PRAZO_ALERTA_DIAS)  return "ALERTA 180 DIAS";
       return "VIGENTE";
     }
 
@@ -1308,7 +1349,7 @@
     // Sem data / data inválida -> permanece em Ativos
     // status_execucao NÃO é mais usado como critério de separação (apenas exibido na tabela)
     function isConcluido(row) {
-      const rawVenc = getFirst(row, ["vigencia_termino","VIGÊNCIA - TÉRMINO","vencimento","Vencimento","vigencia_fim"]);
+      const rawVenc = getFirst(row, CAMPOS.termino);
       const d = parseDateAny(rawVenc);
       if (!d) return false;
 
@@ -1369,7 +1410,7 @@
     function populateFilterOptions(rows) {
       const tipos = new Set();
       rows.forEach(r => {
-        const t = String(getFirst(r, ["tipo_instrumento","Tipo","tipo"]) || "").trim();
+        const t = String(getFirst(r, CAMPOS.tipo) || "").trim();
         if (t) tipos.add(t);
       });
       const tiposSorted = Array.from(tipos).sort((a,b) => a.localeCompare(b, "pt-BR"));
@@ -1379,7 +1420,7 @@
 
       const insts = new Set();
       rows.forEach(r => {
-        const inst = String(getFirst(r, ["instituicao_parceira","instituicao","Instituição","instituicao_parceira_nome"]) || "").trim();
+        const inst = String(getFirst(r, CAMPOS.instituicao) || "").trim();
         if (inst) insts.add(inst);
       });
       const instsSorted = Array.from(insts).sort((a,b) => a.localeCompare(b, "pt-BR"));
@@ -1401,25 +1442,25 @@
       // Registros sem vigencia_inicio preenchida são simplesmente ignorados na geração das opções.
       const anos = new Set();
       rows.forEach(r => {
-        const rawInicio = getFirst(r, ["vigencia_inicio","VIGÊNCIA - INÍCIO","inicio","Inicio"]);
+        const rawInicio = getFirst(r, CAMPOS.inicio);
         const d = parseDateAny(rawInicio);
         if (d) anos.add(String(d.getFullYear()));
       });
       const anosSorted = Array.from(anos).sort();
       yearMultiselectPanelEl.innerHTML =
-        anosSorted.map(y => `<div class="multiselect-option" data-year="${y}">${y}</div>`).join("");
+        anosSorted.map(y => `<div class="multiselect-option" role="option" aria-selected="false" data-year="${y}">${y}</div>`).join("");
       wireYearMultiselectOptions();
 
       // Ano de encerramento — regra oficial: vigencia_termino (não vigencia_inicio).
       const anosEncerramento = new Set();
       rows.forEach(r => {
-        const rawVenc = getFirst(r, ["vigencia_termino","VIGÊNCIA - TÉRMINO","vencimento","Vencimento","vigencia_fim"]);
+        const rawVenc = getFirst(r, CAMPOS.termino);
         const d = parseDateAny(rawVenc);
         if (d) anosEncerramento.add(String(d.getFullYear()));
       });
       const anosEncerramentoSorted = Array.from(anosEncerramento).sort();
       yearEndMultiselectPanelEl.innerHTML =
-        anosEncerramentoSorted.map(y => `<div class="multiselect-option" data-year="${y}">${y}</div>`).join("");
+        anosEncerramentoSorted.map(y => `<div class="multiselect-option" role="option" aria-selected="false" data-year="${y}">${y}</div>`).join("");
       wireYearEndMultiselectOptions();
     }
 
@@ -1430,24 +1471,24 @@
       targetEl.innerHTML = "";
 
       rows.forEach((r) => {
-        const ident = getFirst(r, ["identificacao","Identificação","id_instrumento","ID"]);
-        const inst  = getFirst(r, ["instituicao_parceira","instituicao","Instituição","instituicao_parceira_nome"]);
-        const tipo  = getFirst(r, ["tipo_instrumento","Tipo","tipo"]);
-        const proc  = getFirst(r, ["numero_processo","Processo","processo"]);
+        const ident = getFirst(r, CAMPOS.idDisplay);
+        const inst  = getFirst(r, CAMPOS.instituicao);
+        const tipo  = getFirst(r, CAMPOS.tipo);
+        const proc  = getFirst(r, CAMPOS.processo);
 
-        const inicio = formatDateBR(getFirst(r, ["vigencia_inicio","VIGÊNCIA - INÍCIO","inicio","Inicio"]));
-        const venc   = formatDateBR(getFirst(r, ["vigencia_termino","VIGÊNCIA - TÉRMINO","vencimento","Vencimento","vigencia_fim"]));
+        const inicio = formatDateBR(getFirst(r, CAMPOS.inicio));
+        const venc   = formatDateBR(getFirst(r, CAMPOS.termino));
 
         const stat  = computeStatus(r);
         // Apresentação apenas: instrumento já concluído (vigencia_termino no passado) exibe "VENCIDO"
         // em vez do rótulo de prazo futuro. Não altera computeStatus, KPIs, filtros nem exportação CSV.
         const statDisplay = (isConcluido(r) && stat !== "SEM DATA" && stat !== "ARQUIVADO") ? "VENCIDO" : stat;
         const statCell = stat === "SEM DATA" ? `<span class="badge-semdata">SEM DATA</span>` : escapeHTML(statDisplay || "—");
-        const diretoria = getFirst(r, ["diretoria_responsavel", "Diretoria", "setor_lotacao", "Setor", "setor"]);
-        const gerencia  = getFirst(r, ["gerencia_responsavel", "Gerência", "gerencia"]);
+        const diretoria = getFirst(r, CAMPOS.diretoria);
+        const gerencia  = getFirst(r, CAMPOS.gerencia);
 
-        const possuiAditivoRaw = getFirst(r, ["possui_aditivo","aditivo","Aditivo"]);
-        const qtdAditivosRaw   = getFirst(r, ["quantos_aditivos","Qtd Aditivos","qtd_aditivos"]);
+        const possuiAditivoRaw = getFirst(r, CAMPOS.possuiAditivo);
+        const qtdAditivosRaw   = getFirst(r, CAMPOS.qtdAditivos);
         const possuiAditivo = (possuiAditivoRaw ? String(possuiAditivoRaw) : "").trim().toUpperCase();
         const qtdAditivos   = (qtdAditivosRaw ? String(qtdAditivosRaw) : "").trim();
 
@@ -1460,24 +1501,20 @@
           aditivosLabel = String(possuiAditivoRaw);
         }
 
-        const coordParceiro = getFirst(r, ["coordenador_parceiro","coord_parceiro","coordenador_parceiro_nome"]);
-        const respFvs       = getFirst(r, ["coordenador_fvsrcp","resp_fvs","responsavel_fvs"]);
-        const repasse       = getFirst(r, ["repasse_financeiro","repasse","valor_repasse"]);
+        const coordParceiro = getFirst(r, CAMPOS.coordParceiro);
+        const respFvs       = getFirst(r, CAMPOS.coordFvs);
+        const repasse       = getFirst(r, CAMPOS.repasse);
 
-        const dtAss  = formatDateBR(getFirst(r, ["data_da_assinatura","Data da Assinatura","data_assinatura"]));
+        const dtAss  = formatDateBR(getFirst(r, CAMPOS.dataAssinatura));
 
         // ✅ "Publicação DOE" deve pegar o número do extrato (e também aceitar publicacao_doe)
-        const dtDoe = getFirst(r, [
-          "publicacao_doe", "Publicação DOE",
-          "numero_extrato_publicado", "numero_extrato_publicacao",
-          "extrato_publicacao", "Extrato (nº)", "extrato"
-        ]);
+        const dtDoe = getFirst(r, CAMPOS.publicacaoDoe);
 
-        const linkDoe = getFirst(r, ["link_publicacao_doe","link_doe","publicacao_doe_link"]);
-        const estado = getFirst(r, ["estado","Estado"]);
+        const linkDoe = getFirst(r, CAMPOS.linkDoe);
+        const estado = getFirst(r, CAMPOS.estado);
 
-        const objetivoTexto = getFirst(r, ["objetivo_resumido","objetivo_geral","objeto","Objeto"]);
-        const produtosTexto = getFirst(r, ["produtos_gerados","produtos_gerados.1","produtos","Produtos"]);
+        const objetivoTexto = getFirst(r, CAMPOS.objetivo);
+        const produtosTexto = getFirst(r, CAMPOS.produtos);
 
         const objetivoItens = splitBullets(objetivoTexto);
         const produtosItens = splitBullets(produtosTexto);
@@ -1494,7 +1531,7 @@
           <td>${escapeHTML(venc || "—")}</td>
           <td>${escapeHTML(aditivosLabel || "NÃO")}</td>
           <td>${escapeHTML(proc || "—")}</td>
-          <td><button class="btn js-toggle" type="button">▼</button></td>
+          <td><button class="btn js-toggle" type="button" aria-expanded="false" aria-label="Ver detalhes do instrumento">▼</button></td>
         `;
         targetEl.appendChild(tr);
 
@@ -1535,6 +1572,8 @@
           const isOpen = trDetails.style.display !== "none";
           trDetails.style.display = isOpen ? "none" : "table-row";
           btn.textContent = isOpen ? "▼" : "▲";
+          btn.setAttribute("aria-expanded", String(!isOpen));
+          btn.setAttribute("aria-label", isOpen ? "Ver detalhes do instrumento" : "Ocultar detalhes do instrumento");
         });
       });
     }
@@ -1591,7 +1630,7 @@
 
       const monthMap = new Map();
       base.forEach(r => {
-        const rawVenc = getFirst(r, ["vigencia_termino","VIGÊNCIA - TÉRMINO","vencimento","Vencimento","vigencia_fim"]);
+        const rawVenc = getFirst(r, CAMPOS.termino);
         const d = parseDateAny(rawVenc);
         if (!d) return;
 
@@ -1646,7 +1685,7 @@
 
       const byDir = new Map();
       base.forEach(r => {
-        const dir = String(getFirst(r, ["diretoria_responsavel","Diretoria","setor_lotacao","Setor","setor"]) || "").trim();
+        const dir = String(getFirst(r, CAMPOS.diretoria) || "").trim();
         if (!dir) return;
         byDir.set(dir, (byDir.get(dir) || 0) + 1);
       });
@@ -1688,7 +1727,7 @@
     // já existentes — apenas agrega os mesmos dados de tbl sob outro recorte.
     // =========================
     function getAssinaturaDate(r) {
-      return parseDateAny(getFirst(r, ["data_da_assinatura", "Data da Assinatura", "data_assinatura"]));
+      return parseDateAny(getFirst(r, CAMPOS.dataAssinatura));
     }
 
     // Regra oficial de Histórico: prioridade data_assinatura; na ausência, usa
@@ -1697,7 +1736,7 @@
     function getHistEntry(r) {
       const da = getAssinaturaDate(r);
       if (da) return { year: da.getFullYear(), sortDate: da, assinaturaConhecida: true, date: da };
-      const vi = parseDateAny(getFirst(r, ["vigencia_inicio", "VIGÊNCIA - INÍCIO", "inicio", "Inicio"]));
+      const vi = parseDateAny(getFirst(r, CAMPOS.inicio));
       if (vi) return { year: vi.getFullYear(), sortDate: vi, assinaturaConhecida: false, date: null };
       return null;
     }
@@ -1742,7 +1781,7 @@
       const base = (rows || []).filter(r => computeStatus(r) !== "ARQUIVADO");
       const byTipo = new Map();
       base.forEach(r => {
-        const t = String(getFirst(r, ["tipo_instrumento", "Tipo", "tipo"]) || "").trim();
+        const t = String(getFirst(r, CAMPOS.tipo) || "").trim();
         if (!t) return;
         byTipo.set(t, (byTipo.get(t) || 0) + 1);
       });
@@ -1825,9 +1864,9 @@
 
       function renderList(y) {
         listEl.innerHTML = byYear.get(y).map(({ r, entry }) => {
-          const ident = getFirst(r, ["identificacao", "Identificação", "id_instrumento", "ID"]);
-          const tipo  = getFirst(r, ["tipo_instrumento", "Tipo", "tipo"]);
-          const inst  = getFirst(r, ["instituicao_parceira", "instituicao", "Instituição", "instituicao_parceira_nome"]);
+          const ident = getFirst(r, CAMPOS.idDisplay);
+          const tipo  = getFirst(r, CAMPOS.tipo);
+          const inst  = getFirst(r, CAMPOS.instituicao);
           const titulo = [tipo, ident].filter(Boolean).join(" ");
           // dia/mês só quando a data_assinatura é conhecida; sem ela, mostra apenas o ano
           // e sinaliza discretamente a origem (vigencia_inicio) — nunca inventa dia/mês de assinatura
@@ -1899,7 +1938,7 @@
       const seen = new Set();
       const uniqueRows = [];
       rows.forEach(r => {
-        const id = String(getFirst(r, ["id_instrumento","ID","identificacao","Identificação","numero_processo","Processo","processo"]) || "").trim();
+        const id = String(getFirst(r, CAMPOS.idDedup) || "").trim();
         if (!id) return;
         if (seen.has(id)) return;
         seen.add(id);
@@ -1912,10 +1951,10 @@
         const uf = getUF(r);
         if (!uf) return;
 
-        const id = String(getFirst(r, ["id_instrumento","ID","identificacao","Identificação","numero_processo","Processo","processo"]) || "").trim();
+        const id = String(getFirst(r, CAMPOS.idDedup) || "").trim();
         if (!id) return;
 
-        const instRaw = getFirst(r, ["instituicao_parceira","instituicao","Instituição","instituicao_parceira_nome"]);
+        const instRaw = getFirst(r, CAMPOS.instituicao);
         const inst = String(instRaw || "").trim();
 
         if (!byUF.has(uf)) byUF.set(uf, { ids: new Set(), inst: new Set() });
@@ -2128,7 +2167,7 @@
       function applyUI(rows) {
         if (activeMonth) {
           rows = rows.filter(r => {
-            const rawVenc = getFirst(r, ["vigencia_termino","VIGÊNCIA - TÉRMINO","vencimento","Vencimento","vigencia_fim"]);
+            const rawVenc = getFirst(r, CAMPOS.termino);
             const d = parseDateAny(rawVenc);
             if (!d) return false;
             return monthLabelFromDate(d) === activeMonth;
@@ -2136,7 +2175,7 @@
         }
         if (selectedYears.size > 0) {
           rows = rows.filter(r => {
-            const rawInicio = getFirst(r, ["vigencia_inicio","VIGÊNCIA - INÍCIO","inicio","Inicio"]);
+            const rawInicio = getFirst(r, CAMPOS.inicio);
             const d = parseDateAny(rawInicio);
             if (!d) return false;
             return selectedYears.has(String(d.getFullYear()));
@@ -2144,21 +2183,21 @@
         }
         if (selectedEndYears.size > 0) {
           rows = rows.filter(r => {
-            const rawVenc = getFirst(r, ["vigencia_termino","VIGÊNCIA - TÉRMINO","vencimento","Vencimento","vigencia_fim"]);
+            const rawVenc = getFirst(r, CAMPOS.termino);
             const d = parseDateAny(rawVenc);
             if (!d) return false;
             return selectedEndYears.has(String(d.getFullYear()));
           });
         }
-        if (tipo)      rows = rows.filter(r => String(getFirst(r, ["tipo_instrumento","Tipo","tipo"]) || "").trim() === tipo);
-        if (instSel)   rows = rows.filter(r => String(getFirst(r, ["instituicao_parceira","instituicao","Instituição","instituicao_parceira_nome"]) || "").trim() === instSel);
+        if (tipo)      rows = rows.filter(r => String(getFirst(r, CAMPOS.tipo) || "").trim() === tipo);
+        if (instSel)   rows = rows.filter(r => String(getFirst(r, CAMPOS.instituicao) || "").trim() === instSel);
         if (ufSel)     rows = rows.filter(r => getUF(r) === ufSel);
         if (statusSel) rows = rows.filter(r => computeStatus(r) === statusSel);
         if (qq)        rows = rows.filter(r => {
-          const ident = norm(getFirst(r, ["identificacao","Identificação","id_instrumento","ID"]));
-          const inst  = norm(getFirst(r, ["instituicao_parceira","instituicao","Instituição","instituicao_parceira_nome"]));
-          const dir   = norm(getFirst(r, ["diretoria_responsavel","Diretoria","setor_lotacao","Setor","setor"]));
-          const proc  = norm(getFirst(r, ["numero_processo","Processo","processo"]));
+          const ident = norm(getFirst(r, CAMPOS.idDisplay));
+          const inst  = norm(getFirst(r, CAMPOS.instituicao));
+          const dir   = norm(getFirst(r, CAMPOS.diretoria));
+          const proc  = norm(getFirst(r, CAMPOS.processo));
           return ident.includes(qq) || inst.includes(qq) || dir.includes(qq) || proc.includes(qq);
         });
         return rows;
@@ -2168,7 +2207,7 @@
       const conclRows  = applyUI(conclBase);
 
       // ordenação apenas para visualização — não altera o CSV nem a coleção original
-      const getVenc = r => parseDateAny(getFirst(r, ["vigencia_termino","VIGÊNCIA - TÉRMINO","vencimento","Vencimento","vigencia_fim"]));
+      const getVenc = r => parseDateAny(getFirst(r, CAMPOS.termino));
       activeRows.sort((a, b) => {
         const da = getVenc(a), db = getVenc(b);
         if (!da && !db) return 0;
@@ -2246,7 +2285,9 @@
     // =========================
     function updateYearMultiselectUI() {
       yearMultiselectPanelEl.querySelectorAll(".multiselect-option").forEach(opt => {
-        opt.classList.toggle("selected", selectedYears.has(opt.dataset.year));
+        const on = selectedYears.has(opt.dataset.year);
+        opt.classList.toggle("selected", on);
+        opt.setAttribute("aria-selected", String(on));
       });
       if (selectedYears.size === 0) {
         yearMultiselectBtnEl.textContent = "Todos";
@@ -2272,6 +2313,7 @@
 
     yearMultiselectBtnEl.addEventListener("click", () => {
       yearMultiselectPanelEl.hidden = !yearMultiselectPanelEl.hidden;
+      yearMultiselectBtnEl.setAttribute("aria-expanded", String(!yearMultiselectPanelEl.hidden));
     });
 
     // =========================
@@ -2279,7 +2321,9 @@
     // =========================
     function updateYearEndMultiselectUI() {
       yearEndMultiselectPanelEl.querySelectorAll(".multiselect-option").forEach(opt => {
-        opt.classList.toggle("selected", selectedEndYears.has(opt.dataset.year));
+        const on = selectedEndYears.has(opt.dataset.year);
+        opt.classList.toggle("selected", on);
+        opt.setAttribute("aria-selected", String(on));
       });
       if (selectedEndYears.size === 0) {
         yearEndMultiselectBtnEl.textContent = "Todos";
@@ -2305,14 +2349,17 @@
 
     yearEndMultiselectBtnEl.addEventListener("click", () => {
       yearEndMultiselectPanelEl.hidden = !yearEndMultiselectPanelEl.hidden;
+      yearEndMultiselectBtnEl.setAttribute("aria-expanded", String(!yearEndMultiselectPanelEl.hidden));
     });
 
     document.addEventListener("click", (e) => {
       if (!yearMultiselectEl.contains(e.target)) {
         yearMultiselectPanelEl.hidden = true;
+        yearMultiselectBtnEl.setAttribute("aria-expanded", "false");
       }
       if (!yearEndMultiselectEl.contains(e.target)) {
         yearEndMultiselectPanelEl.hidden = true;
+        yearEndMultiselectBtnEl.setAttribute("aria-expanded", "false");
       }
     });
 
@@ -2325,20 +2372,20 @@
     function exportCSV(rows, filename) {
       if (!rows || !rows.length) { alert("Nenhum instrumento disponível para exportar."); return; }
       const cols = [
-        { label: "Identificação", fn: r => getFirst(r, ["identificacao","Identificação","id_instrumento","ID"]) },
-        { label: "Tipo",          fn: r => getFirst(r, ["tipo_instrumento","Tipo","tipo"]) },
-        { label: "Instituição",   fn: r => getFirst(r, ["instituicao_parceira","instituicao","Instituição","instituicao_parceira_nome"]) },
-        { label: "Diretoria",     fn: r => getFirst(r, ["diretoria_responsavel","Diretoria","setor_lotacao","Setor","setor"]) },
-        { label: "Gerência",      fn: r => getFirst(r, ["gerencia_responsavel","Gerência","gerencia"]) },
+        { label: "Identificação", fn: r => getFirst(r, CAMPOS.idDisplay) },
+        { label: "Tipo",          fn: r => getFirst(r, CAMPOS.tipo) },
+        { label: "Instituição",   fn: r => getFirst(r, CAMPOS.instituicao) },
+        { label: "Diretoria",     fn: r => getFirst(r, CAMPOS.diretoria) },
+        { label: "Gerência",      fn: r => getFirst(r, CAMPOS.gerencia) },
         { label: "Status",        fn: r => computeStatus(r) },
-        { label: "Início",        fn: r => formatDateBR(getFirst(r, ["vigencia_inicio","VIGÊNCIA - INÍCIO","inicio","Inicio"])) || "—" },
-        { label: "Vencimento",    fn: r => formatDateBR(getFirst(r, ["vigencia_termino","VIGÊNCIA - TÉRMINO","vencimento","Vencimento","vigencia_fim"])) || "—" },
+        { label: "Início",        fn: r => formatDateBR(getFirst(r, CAMPOS.inicio)) || "—" },
+        { label: "Vencimento",    fn: r => formatDateBR(getFirst(r, CAMPOS.termino)) || "—" },
         { label: "Aditivos",      fn: r => {
-          const p = (String(getFirst(r, ["possui_aditivo","aditivo","Aditivo"]) || "")).trim().toUpperCase();
-          const q = (String(getFirst(r, ["quantos_aditivos","Qtd Aditivos","qtd_aditivos"]) || "")).trim();
+          const p = (String(getFirst(r, CAMPOS.possuiAditivo) || "")).trim().toUpperCase();
+          const q = (String(getFirst(r, CAMPOS.qtdAditivos) || "")).trim();
           return ["SIM","S","TRUE","1"].includes(p) ? (q ? `SIM (${q})` : "SIM") : "NÃO";
         }},
-        { label: "Processo",      fn: r => getFirst(r, ["numero_processo","Processo","processo"]) },
+        { label: "Processo",      fn: r => getFirst(r, CAMPOS.processo) },
       ];
       const esc = v => { const s = String(v ?? "—"); return s.includes(";") || s.includes('"') || s.includes("\n") ? `"${s.replace(/"/g,'""')}"` : s; };
       const header = cols.map(c => esc(c.label)).join(";");
@@ -2371,7 +2418,7 @@
     // =========================
     // PAINEL GEO LOCAL — Leaflet + OpenStreetMap
     // =========================
-    let _leafletUF    = null;   // UF atualmente exibida (mantido por compatibilidade)
+    let _gUF          = null;   // UF atualmente exibida no painel Leaflet (evita reprocessar ao repetir hover)
     let _gInsts       = [];     // instituições carregadas do CSV geo
     let _gTimer       = null;
 
@@ -2518,6 +2565,29 @@
       });
 
       tbl = parsed;
+
+      // -------------------------------------------------------------
+      // Rede de proteção anti-duplicidade no carregamento (Onda 2 — 2026-07-24)
+      // Garante que cada instrumento apareça UMA única vez, usando a MESMA
+      // chave de identidade do mapa (buildBrazilMap). Hoje é no-op (os ids são
+      // únicos no CSV), mas evita que, no futuro, uma linha duplicada infle
+      // KPIs/tabela e fique inconsistente com o mapa — que já deduplica.
+      // Linhas SEM chave são sempre mantidas (não podem ser agrupadas com
+      // segurança) e nunca descartadas. Preserva a ordem original.
+      // -------------------------------------------------------------
+      (function dedupTbl() {
+        const seen = new Set();
+        const out = [];
+        let removidas = 0;
+        for (const r of tbl) {
+          const id = String(getFirst(r, CAMPOS.idDedup) || "").trim();
+          if (id && seen.has(id)) { removidas++; continue; }
+          if (id) seen.add(id);
+          out.push(r);
+        }
+        if (removidas > 0) console.warn(`[INIT] ${removidas} linha(s) duplicada(s) por identidade ignorada(s) no carregamento.`);
+        tbl = out;
+      })();
 
       // gráficos e filtros usam base completa (mas sem arquivados)
       const baseCharts = tbl.filter(r => computeStatus(r) !== "ARQUIVADO");
