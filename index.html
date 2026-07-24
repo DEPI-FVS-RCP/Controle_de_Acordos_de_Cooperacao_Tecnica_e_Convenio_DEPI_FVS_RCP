@@ -89,6 +89,7 @@
     .brand-text .org{ font-size:11px; color:var(--muted); letter-spacing:var(--tracking-label); text-transform:uppercase; margin-bottom:2px; display:flex; align-items:center; gap:8px; }
     .brand-text .title{ margin:0; font-size:20px; font-weight:700; line-height:1.15; letter-spacing:-0.01em; display:flex; align-items:center; gap:10px; }
     .brand-text .subtitle{ margin-top:4px; font-size:13px; color:var(--muted); }
+    .brand-text .ref-date{ margin-top:2px; font-size:12px; color:var(--muted); font-style:italic; }
 
     .titleIcon{ width: 24px; height: 24px; flex: 0 0 24px; }
 
@@ -127,6 +128,10 @@
       appearance: none;
       -webkit-appearance: none;
       -moz-appearance: none;
+      /* Força a lista suspensa nativa a renderizar clara (fundo branco), igual ao
+         painel dos filtros de ano (.multiselect-panel). Sem isso, em SO no modo
+         escuro a lista dos <select> nativos aparecia preta, destoando dos demais. */
+      color-scheme: light;
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23666666' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
       background-repeat: no-repeat;
       background-position: right var(--space-2) center;
@@ -134,7 +139,7 @@
       cursor: pointer;
     }
     select.select option{
-      background: #fff;
+      background: #ffffff;
       color: #333;
     }
     select.select option:checked{
@@ -364,6 +369,9 @@
     }
     .tbl tbody tr:nth-child(even) td { background:#fafafa; }
     .tbl tbody tr:hover td { background:#f8fafc; }
+    .tbl tbody tr.emptyRow td,
+    .tbl tbody tr.emptyRow:hover td { background:transparent; }
+    .tbl td.emptyState{ text-align:center; color:var(--muted); font-size:13px; padding:22px 12px; font-style:italic; }
 
     .tbl tbody td { text-align:center; white-space: nowrap; }
 
@@ -783,6 +791,50 @@
     }
     .hist-list-ident { font-weight: 700; color: #1a3a5f; font-size: 14px; }
     .hist-list-inst { color: #666; font-size: 13px; margin-top: 2px; }
+
+    /* =========================================================
+       Impressão / exportação em PDF (Ctrl+P) — 2026-07-24
+       Só apresentação: transforma a tela em um relatório limpo para a
+       diretoria, sem alterar nada da lógica, filtros, KPIs ou dados.
+       Esconde controles interativos e preserva cabeçalho, cards,
+       gráficos e tabelas com as cores institucionais.
+       ========================================================= */
+    @media print {
+      @page { size: A4 landscape; margin: 12mm; }
+      /* preserva backgrounds/cores dos cards, badges e gráficos no papel */
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      body { background: #fff !important; }
+      body::before { display: none !important; }
+
+      /* controles interativos não fazem sentido no papel */
+      #password-overlay,
+      .logout-btn,
+      .view-tabs,
+      .sidebar,
+      .btn-export,
+      .tbl .js-toggle,
+      #resetFilters { display: none !important; }
+
+      /* conteúdo ocupa a página inteira — apenas a aba Operacional é impressa.
+         #viewHistorico também tem class="layout", mas seus gráficos só são
+         construídos ao ativar a aba; imprimi-lo geraria boxes vazios. */
+      #viewOperacional.layout { display: block !important; }
+      #viewHistorico { display: none !important; }
+      .main { min-width: 0 !important; width: 100% !important; }
+
+      /* evita cortar cards, gráficos e linhas no meio entre páginas */
+      .card, .panel, .tbl tbody tr { break-inside: avoid; page-break-inside: avoid; }
+      .cards { gap: 8px !important; }
+
+      /* a seção de Concluídos é um <details> recolhível: no relatório ela
+         aparece sempre aberta e sem o botão "Mostrar instrumentos concluídos" */
+      details.section-concluidos > *:not(summary) { display: block !important; }
+      details.section-concluidos > summary { display: none !important; }
+
+      /* datas/linhas menos "apertadas" para leitura impressa */
+      .tbl { font-size: 11px !important; }
+      a[href]:after { content: "" !important; } /* não imprime URLs entre parênteses */
+    }
   </style>
 </head>
 
@@ -821,6 +873,7 @@
           Controle de Acordos de Cooperação Técnica, Convênios e Termos de Colaboração
         </h1>
         <div class="subtitle">Painel de monitoramento de vigência e renovação</div>
+        <div class="ref-date" id="refDate" aria-live="polite"></div>
       </div>
     </div>
   </header>
@@ -1358,6 +1411,18 @@
       return d < todayStart;
     }
 
+    // Classificação para a rosca "Situação dos instrumentos".
+    // Instrumentos já vencidos (concluídos) formam categoria PRÓPRIA — não se
+    // misturam com "CRÍTICO 60 DIAS" (que passa a contar só quem AINDA está ativo
+    // e a ≤60 dias do vencimento). Assim a rosca fica coerente com os cards, onde
+    // "Crítico" também é exclusivo de ativos e "Concluídos" tem card próprio.
+    // computeStatus/isConcluido/KPIs/CSV permanecem inalterados.
+    function statusBucket(row) {
+      if (isArquivado(row)) return "ARQUIVADO";
+      if (isConcluido(row)) return "VENCIDO";
+      return computeStatus(row);
+    }
+
     // =========================
     // Estado
     // =========================
@@ -1469,6 +1534,16 @@
     // =========================
     function render(rows, targetEl = tbodyEl) {
       targetEl.innerHTML = "";
+
+      // Estado vazio: sem esta linha, um filtro/pesquisa sem resultados deixaria
+      // a tabela só com o cabeçalho (aparência de "quebrado"). Apenas apresentação.
+      if (!rows || rows.length === 0) {
+        const trEmpty = document.createElement("tr");
+        trEmpty.className = "emptyRow";
+        trEmpty.innerHTML = `<td colspan="11" class="emptyState">Nenhum instrumento encontrado com os filtros atuais.</td>`;
+        targetEl.appendChild(trEmpty);
+        return;
+      }
 
       rows.forEach((r) => {
         const ident = getFirst(r, CAMPOS.idDisplay);
@@ -1603,19 +1678,22 @@
     // Gráficos
     // =========================
     function buildStatusDonut(rows) {
-      const base = (rows || []).filter(r => computeStatus(r) !== "ARQUIVADO");
-      const counts = { "VIGENTE": 0, "ALERTA 180 DIAS": 0, "CRÍTICO 60 DIAS": 0, "SEM DATA": 0 };
-      base.forEach(r => { counts[computeStatus(r)] = (counts[computeStatus(r)] || 0) + 1; });
+      // Usa statusBucket(): instrumentos vencidos (concluídos) formam categoria
+      // própria "CONCLUÍDO (vencido)", coerente com os cards. "CRÍTICO (≤60 dias)"
+      // passa a contar somente instrumentos AINDA ativos e a ≤60 dias do vencimento.
+      const base = (rows || []).filter(r => statusBucket(r) !== "ARQUIVADO");
+      const counts = { "VIGENTE": 0, "ALERTA 180 DIAS": 0, "CRÍTICO 60 DIAS": 0, "VENCIDO": 0, "SEM DATA": 0 };
+      base.forEach(r => { counts[statusBucket(r)] = (counts[statusBucket(r)] || 0) + 1; });
 
       Plotly.newPlot("chart_status", [{
         type: "pie",
-        labels: ["VIGENTE", "ATENÇÃO (61–180 dias)", "CRÍTICO (≤60 dias)", "SEM DATA"],
-        values: [counts["VIGENTE"], counts["ALERTA 180 DIAS"], counts["CRÍTICO 60 DIAS"], counts["SEM DATA"]],
+        labels: ["VIGENTE", "ATENÇÃO (61–180 dias)", "CRÍTICO (≤60 dias)", "CONCLUÍDO (vencido)", "SEM DATA"],
+        values: [counts["VIGENTE"], counts["ALERTA 180 DIAS"], counts["CRÍTICO 60 DIAS"], counts["VENCIDO"], counts["SEM DATA"]],
         hole: 0.55,
         textinfo: "value+percent",
         texttemplate: "<b>%{value}</b><br>%{percent:.0%}",
         textposition: "inside",
-        marker: { colors: ["#16a34a", "#f59e0b", "#d62c26", "#9ca3af"], line: { color: "#ffffff", width: 3 } },
+        marker: { colors: ["#16a34a", "#f59e0b", "#d62c26", "#6b7280", "#9ca3af"], line: { color: "#ffffff", width: 3 } },
         sort: false,
         showlegend: false
       }], {
@@ -1626,7 +1704,10 @@
     }
 
     function buildVencBar(rows) {
-      const base = (rows || []).filter(r => computeStatus(r) !== "ARQUIVADO");
+      // "Cronograma de vencimentos" = distribuição dos instrumentos ATIVOS conforme o
+      // prazo até o vencimento (o subtítulo já diz "instrumentos ativos"). Instrumentos
+      // já vencidos (concluídos) NÃO entram aqui — pertencem à categoria "Concluídos".
+      const base = (rows || []).filter(r => computeStatus(r) !== "ARQUIVADO" && !isConcluido(r));
 
       const monthMap = new Map();
       base.forEach(r => {
@@ -1646,8 +1727,14 @@
       });
 
       const months = Array.from(monthMap.keys()).sort((a,b) => {
+        // A chave vem de monthLabelFromDate -> "mês de ano" (ex.: "jul de 2028").
+        // O mês é sempre o 1º token e o ano é sempre o ÚLTIMO token; o "de" no meio
+        // não pode ser lido como ano (senão Number("de")=NaN e a ordem cronológica
+        // quebrava, deixando as barras fora de ordem).
         const parseKey = (k) => {
-          const [mon, year] = k.split(" ");
+          const parts = k.split(" ");
+          const mon = parts[0];
+          const year = parts[parts.length - 1];
           const mMap = {jan:0,fev:1,mar:2,abr:3,mai:4,jun:5,jul:6,ago:7,set:8,out:9,nov:10,dez:11};
           return new Date(Number(year), mMap[mon] ?? 0, 1).getTime();
         };
@@ -2398,6 +2485,17 @@
     document.getElementById("btnExportAtivos").addEventListener("click", () => exportCSV(lastActiveRows, "instrumentos_ativos.csv"));
     document.getElementById("btnExportConcluidos").addEventListener("click", () => exportCSV(lastConclRows, "instrumentos_concluidos.csv"));
 
+    /* A tabela de Concluídos vive num <details> recolhível; o Chromium não a
+       revela via CSS puro na impressão. Abrimos o details durante a impressão
+       e restauramos o estado original ao terminar. */
+    (function setupPrintDetails(){
+      const det = document.getElementById("detailsConcluidos");
+      if (!det) return;
+      let wasOpen = false;
+      window.addEventListener("beforeprint", () => { wasOpen = det.open; det.open = true; });
+      window.addEventListener("afterprint",  () => { det.open = wasOpen; });
+    })();
+
     quickSearchEl.addEventListener("input", applyFilters);
     filterTipoEl.addEventListener("change", applyFilters);
     filterStatusEl.addEventListener("change", applyFilters);
@@ -2597,6 +2695,13 @@
       buildVencBar(baseCharts);
       buildBrazilMap(baseCharts);
       buildDiretoriaBar(baseCharts);
+
+      // Data de referência: todo o cálculo de situação (VIGENTE/CRÍTICO/VENCIDO)
+      // é relativo a "hoje" (momento em que a página é aberta). Exibir essa data
+      // no cabeçalho evita ambiguidade em cópias impressas/reabertas depois.
+      // É só apresentação — não altera computeStatus, KPIs, filtros nem dados.
+      const refDateEl = document.getElementById("refDate");
+      if (refDateEl) refDateEl.textContent = "Situação calculada em " + formatDateBR(new Date());
 
       // tabela + KPIs
       applyFilters();
