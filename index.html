@@ -2524,10 +2524,41 @@
     let _gInsts       = [];     // instituições carregadas do CSV geo
     let _gTimer       = null;
 
+    // Painel Leaflet de detalhe por UF (abre no hover da bolinha do mapa Brasil).
+    // Pré-preenchido com as 27 capitais para escalabilidade: ao surgir uma nova
+    // parceria em qualquer estado, basta acrescentar a linha da instituição em
+    // data/tbl_instituicoes_geo.csv — nenhuma edição de código é necessária.
+    // AM/CE/BA mantêm center/zoom originais (aprovados). As demais usam a capital
+    // com zoom 12 (nível cidade); o painel reenquadra automaticamente nos
+    // marcadores reais (fitBounds p/ >1 instituição, setView p/ 1).
     const GEO_CONFIG = {
-      AM: { city: "Manaus",    zoom: 14, center: [-3.1040, -60.0150] },
-      CE: { city: "Fortaleza", zoom: 14, center: [-3.7600, -38.5700] },
-      BA: { city: "Salvador",  zoom: 14, center: [-12.9617, -38.4346] }
+      AC: { city: "Rio Branco",     zoom: 12, center: [ -9.9750, -67.8243] },
+      AL: { city: "Maceió",         zoom: 12, center: [ -9.6498, -35.7089] },
+      AP: { city: "Macapá",         zoom: 12, center: [  0.0349, -51.0694] },
+      AM: { city: "Manaus",         zoom: 14, center: [ -3.1040, -60.0150] },
+      BA: { city: "Salvador",       zoom: 14, center: [-12.9617, -38.4346] },
+      CE: { city: "Fortaleza",      zoom: 14, center: [ -3.7600, -38.5700] },
+      DF: { city: "Brasília",       zoom: 12, center: [-15.7939, -47.8828] },
+      ES: { city: "Vitória",        zoom: 12, center: [-20.3155, -40.3128] },
+      GO: { city: "Goiânia",        zoom: 12, center: [-16.6869, -49.2648] },
+      MA: { city: "São Luís",       zoom: 12, center: [ -2.5307, -44.3068] },
+      MG: { city: "Belo Horizonte", zoom: 12, center: [-19.9167, -43.9345] },
+      MS: { city: "Campo Grande",   zoom: 12, center: [-20.4697, -54.6201] },
+      MT: { city: "Cuiabá",         zoom: 12, center: [-15.6014, -56.0979] },
+      PA: { city: "Belém",          zoom: 12, center: [ -1.4558, -48.4902] },
+      PB: { city: "João Pessoa",    zoom: 12, center: [ -7.1195, -34.8450] },
+      PE: { city: "Recife",         zoom: 12, center: [ -8.0476, -34.8770] },
+      PI: { city: "Teresina",       zoom: 12, center: [ -5.0892, -42.8019] },
+      PR: { city: "Curitiba",       zoom: 12, center: [-25.4284, -49.2733] },
+      RJ: { city: "Rio de Janeiro", zoom: 12, center: [-22.9068, -43.1729] },
+      RN: { city: "Natal",          zoom: 12, center: [ -5.7945, -35.2110] },
+      RO: { city: "Porto Velho",    zoom: 12, center: [ -8.7619, -63.9039] },
+      RR: { city: "Boa Vista",      zoom: 12, center: [  2.8235, -60.6758] },
+      RS: { city: "Porto Alegre",   zoom: 12, center: [-30.0346, -51.2177] },
+      SC: { city: "Florianópolis",  zoom: 12, center: [-27.5954, -48.5480] },
+      SE: { city: "Aracaju",        zoom: 12, center: [-10.9472, -37.0731] },
+      SP: { city: "São Paulo",      zoom: 12, center: [-23.5505, -46.6333] },
+      TO: { city: "Palmas",         zoom: 12, center: [-10.1840, -48.3336] }
     };
 
     // ─── render principal — Leaflet ───────────────────────────────
