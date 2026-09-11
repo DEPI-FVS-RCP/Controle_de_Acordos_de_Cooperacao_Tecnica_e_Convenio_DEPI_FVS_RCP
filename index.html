@@ -846,6 +846,12 @@
     .search-label { display:block; font-size:13px; color:#1e3a5f; font-weight:600; margin-bottom:2px; }
     .command-form { display:flex; gap:8px; margin-top:12px; }
     .command-form input { flex:1; min-width:0; }
+    .search-field { position:relative; flex:1; min-width:0; }
+    .search-field input { width:100%; padding-right:32px; }
+    .search-field input::-webkit-search-cancel-button { -webkit-appearance:none; appearance:none; }
+    .search-clear { position:absolute; right:8px; top:50%; transform:translateY(-50%); width:20px; height:20px; padding:0; display:flex; align-items:center; justify-content:center; border:none; border-radius:50%; background:transparent; color:#94a3b8; font-size:18px; line-height:1; cursor:pointer; transition:color var(--transition-fast), background var(--transition-fast); }
+    .search-clear:hover { color:#334155; background:#f1f5f9; }
+    .search-clear[hidden] { display:none; }
     .command-examples { display:flex; flex-wrap:wrap; gap:6px; margin:10px 0; }
     .command-examples button, .filter-chip { border:1px solid #d8e2ec; background:#f4f7fb; color:#274b70; border-radius:7px; padding:6px 9px; font:inherit; font-size:12px; cursor:pointer; text-align:left; overflow-wrap:anywhere; }
     .command-examples button:hover, .filter-chip:hover { background:#e9f0f7; border-color:#8aa9c7; }
@@ -911,6 +917,7 @@
       .comparison-controls { grid-template-columns:1fr; }
       .command-form { flex-wrap:wrap; }
       .command-form input { flex-basis:100%; }
+      .command-form .search-field { flex-basis:100%; }
       .explore-summary { padding:14px; }
       button.card { min-width:120px; padding:16px; }
       .comparison-table th, .comparison-table td { padding:8px 5px; font-size:11px; }
@@ -1103,9 +1110,12 @@
       </section>
 
       <div class="explore-tools" id="searchBar">
-        <label class="search-label" for="quickSearch">Digite uma palavra para buscar (inclui nome de representantes e e-mail)…</label>
+        <label class="search-label" for="quickSearch">Digite uma palavra para buscar…</label>
         <div class="command-form">
-          <input id="quickSearch" class="select" type="search" role="searchbox" aria-label="Pesquisar instrumentos por identificação, instituição, diretoria, processo, nome de representante ou e-mail" placeholder="Pesquisar instrumento, instituição, diretoria, processo, pessoa ou e-mail…" />
+          <div class="search-field">
+            <input id="quickSearch" class="select" type="search" role="searchbox" aria-label="Pesquisar instrumentos por identificação, instituição, diretoria, processo, nome de representante ou e-mail" placeholder="Pesquisar instrumento, instituição, diretoria, processo, pessoa ou e-mail…" />
+            <button class="search-clear" type="button" id="clearSearch" aria-label="Limpar busca" title="Limpar busca" hidden>&times;</button>
+          </div>
           <button class="btn" type="button" id="searchBtn" aria-label="Pesquisar" title="Pesquisar">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:5px;"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>Pesquisar
           </button>
@@ -1703,6 +1713,8 @@
     // Elementos
     // =========================
     const quickSearchEl = document.getElementById("quickSearch");
+    const clearSearchEl = document.getElementById("clearSearch");
+    function toggleClearSearch(){ if (clearSearchEl) clearSearchEl.hidden = !quickSearchEl.value; }
     const resetBtnEl = document.getElementById("resetFilters");
     const btnConcluidosEl = document.getElementById("btnConcluidos");
     const hintEl = document.getElementById("filterHint");
@@ -2696,7 +2708,7 @@
         btn.addEventListener("click", () => { remove(); applyFilters(); document.getElementById("openCurrentRows").focus(); });
         chips.appendChild(btn);
       };
-      if (quickSearchEl.value) addChip("Pesquisa: " + quickSearchEl.value, () => { quickSearchEl.value = ""; });
+      if (quickSearchEl.value) addChip("Pesquisa: " + quickSearchEl.value, () => { quickSearchEl.value = ""; toggleClearSearch(); });
       if (activeMonth) addChip("Vencimento: " + activeMonth, () => { activeMonth = null; });
       if (selectedYears.size) addChip("Início: " + Array.from(selectedYears).sort().join(", "), () => { selectedYears.clear(); updateYearMultiselectUI(); });
       if (selectedEndYears.size) addChip("Encerramento: " + Array.from(selectedEndYears).sort().join(", "), () => { selectedEndYears.clear(); updateYearEndMultiselectUI(); });
@@ -2889,6 +2901,7 @@
       exploreSelection = {scope:"", bucket:"", diretoria:""};
 
       quickSearchEl.value = "";
+      toggleClearSearch();
       selectedYears.clear();
       updateYearMultiselectUI();
       selectedEndYears.clear();
@@ -3031,9 +3044,11 @@
       window.addEventListener("afterprint",  () => { det.open = wasOpen; });
     })();
 
-    quickSearchEl.addEventListener("input", applyFilters);
+    quickSearchEl.addEventListener("input", () => { toggleClearSearch(); applyFilters(); });
     document.getElementById("searchBtn").addEventListener("click", () => { applyFilters(); quickSearchEl.focus(); });
     quickSearchEl.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); applyFilters(); } });
+    if (clearSearchEl) clearSearchEl.addEventListener("click", () => { quickSearchEl.value = ""; toggleClearSearch(); applyFilters(); quickSearchEl.focus(); });
+    toggleClearSearch();
     filterTipoEl.addEventListener("change", applyFilters);
     filterInstEl.addEventListener("change", applyFilters);
     filterUFEl.addEventListener("change", applyFilters);
