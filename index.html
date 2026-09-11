@@ -1051,17 +1051,6 @@
       </div>
 
       <div class="field">
-        <div class="label">Status</div>
-        <select id="filterStatus" class="select" aria-label="Filtrar por status de vigência">
-          <option value="">Todos</option>
-          <option value="VIGENTE">VIGENTE</option>
-          <option value="ALERTA 180 DIAS">ATENÇÃO (61–180 dias)</option>
-          <option value="CRÍTICO 60 DIAS">CRÍTICO (≤60 dias)</option>
-          <option value="SEM DATA">SEM DATA</option>
-        </select>
-      </div>
-
-      <div class="field">
         <button id="resetFilters" class="btn" style="width:100%;">Limpar filtros</button>
       </div>
 
@@ -1114,9 +1103,9 @@
       </section>
 
       <div class="explore-tools" id="searchBar">
-        <label class="search-label" for="quickSearch">Digite uma palavra para buscar…</label>
+        <label class="search-label" for="quickSearch">Digite uma palavra para buscar (inclui nome de representantes e e-mail)…</label>
         <div class="command-form">
-          <input id="quickSearch" class="select" type="search" role="searchbox" aria-label="Pesquisar instrumentos por identificação, instituição, diretoria ou processo" placeholder="Pesquisar instrumento, instituição, diretoria ou processo…" />
+          <input id="quickSearch" class="select" type="search" role="searchbox" aria-label="Pesquisar instrumentos por identificação, instituição, diretoria, processo, nome de representante ou e-mail" placeholder="Pesquisar instrumento, instituição, diretoria, processo, pessoa ou e-mail…" />
           <button class="btn" type="button" id="searchBtn" aria-label="Pesquisar" title="Pesquisar">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:5px;"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>Pesquisar
           </button>
@@ -1727,7 +1716,6 @@
     const yearEndMultiselectBtnEl = document.getElementById("yearEndMultiselectBtn");
     const yearEndMultiselectPanelEl = document.getElementById("yearEndMultiselectPanel");
     const filterTipoEl = document.getElementById("filterTipo");
-    const filterStatusEl = document.getElementById("filterStatus");
     const filterInstEl = document.getElementById("filterInst");
     const filterUFEl = document.getElementById("filterUF");
 
@@ -2533,7 +2521,6 @@
     function applyFilters() {
       const qq        = norm(quickSearchEl.value);
       const tipo      = filterTipoEl.value;
-      const statusSel = filterStatusEl.value;
       const instSel   = filterInstEl.value;
       const ufSel     = filterUFEl.value;
 
@@ -2573,13 +2560,14 @@
         if (tipo)      rows = rows.filter(r => String(getFirst(r, CAMPOS.tipo) || "").trim() === tipo);
         if (instSel)   rows = rows.filter(r => String(getFirst(r, CAMPOS.instituicao) || "").trim() === instSel);
         if (ufSel)     rows = rows.filter(r => getUF(r) === ufSel);
-        if (statusSel) rows = rows.filter(r => computeStatus(r) === statusSel);
         if (qq)        rows = rows.filter(r => {
           const ident = norm(getFirst(r, CAMPOS.idDisplay));
           const inst  = norm(getFirst(r, CAMPOS.instituicao));
           const dir   = norm(getFirst(r, CAMPOS.diretoria));
           const proc  = norm(getFirst(r, CAMPOS.processo));
-          return ident.includes(qq) || inst.includes(qq) || dir.includes(qq) || proc.includes(qq);
+          const coordP = norm(getFirst(r, CAMPOS.coordParceiro));
+          const coordF = norm(getFirst(r, CAMPOS.coordFvs));
+          return ident.includes(qq) || inst.includes(qq) || dir.includes(qq) || proc.includes(qq) || coordP.includes(qq) || coordF.includes(qq);
         });
         return getExplorationRows(rows, exploreSelection);
       }
@@ -2611,13 +2599,13 @@
       render(conclRows,  tbodyConclEl);
       updateKPIs(activeRows, conclRows);
 
-      const anyFilter = Boolean(activeMonth || qq || selectedYears.size > 0 || selectedEndYears.size > 0 || tipo || statusSel || instSel || ufSel || exploreSelection.scope || exploreSelection.bucket || exploreSelection.diretoria);
+      const anyFilter = Boolean(activeMonth || qq || selectedYears.size > 0 || selectedEndYears.size > 0 || tipo || instSel || ufSel || exploreSelection.scope || exploreSelection.bucket || exploreSelection.diretoria);
 
       activeCountLabelEl.textContent = anyFilter
         ? `Exibindo ${activeRows.length} de ${activeBase.length} instrumentos`
         : `Exibindo todos os ${activeBase.length} instrumentos`;
 
-      const filterCount = [activeMonth, qq, selectedYears.size > 0, selectedEndYears.size > 0, tipo, instSel, ufSel, statusSel, exploreSelection.scope, exploreSelection.bucket, exploreSelection.diretoria].filter(Boolean).length;
+      const filterCount = [activeMonth, qq, selectedYears.size > 0, selectedEndYears.size > 0, tipo, instSel, ufSel, exploreSelection.scope, exploreSelection.bucket, exploreSelection.diretoria].filter(Boolean).length;
       filterCountEl.textContent = filterCount > 0 ? ` • ${filterCount} ativo${filterCount === 1 ? "" : "s"}` : "";
 
       if (anyFilter) {
@@ -2635,7 +2623,6 @@
       if (tipo)        hints.push(`tipo: ${tipo}`);
       if (instSel)     hints.push(`instituição: ${instSel}`);
       if (ufSel)       hints.push(`UF: ${ufSel}`);
-      if (statusSel)   hints.push(`status: ${statusSel}`);
       if (qq)          hints.push(`pesquisa`);
       if (exploreSelection.scope) hints.push(`situação: ${exploreSelection.scope === "ativos" ? "ativos" : "concluídos"}`);
       if (exploreSelection.bucket) hints.push(`situação do gráfico: ${exploreSelection.bucket}`);
@@ -2713,7 +2700,7 @@
       if (activeMonth) addChip("Vencimento: " + activeMonth, () => { activeMonth = null; });
       if (selectedYears.size) addChip("Início: " + Array.from(selectedYears).sort().join(", "), () => { selectedYears.clear(); updateYearMultiselectUI(); });
       if (selectedEndYears.size) addChip("Encerramento: " + Array.from(selectedEndYears).sort().join(", "), () => { selectedEndYears.clear(); updateYearEndMultiselectUI(); });
-      [["Tipo",filterTipoEl],["Instituição",filterInstEl],["UF",filterUFEl],["Status",filterStatusEl]].forEach(([label,el]) => {
+      [["Tipo",filterTipoEl],["Instituição",filterInstEl],["UF",filterUFEl]].forEach(([label,el]) => {
         if (el.value) addChip(label + ": " + el.options[el.selectedIndex].text, () => { el.value = ""; });
       });
       if (exploreSelection.scope) addChip(exploreSelection.scope === "ativos" ? "Somente ativos" : "Somente concluídos", () => { exploreSelection.scope = ""; });
@@ -2907,7 +2894,6 @@
       selectedEndYears.clear();
       updateYearEndMultiselectUI();
       filterTipoEl.value = "";
-      filterStatusEl.value = "";
       filterInstEl.value = "";
       filterUFEl.value = "";
     }
@@ -3049,7 +3035,6 @@
     document.getElementById("searchBtn").addEventListener("click", () => { applyFilters(); quickSearchEl.focus(); });
     quickSearchEl.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); applyFilters(); } });
     filterTipoEl.addEventListener("change", applyFilters);
-    filterStatusEl.addEventListener("change", applyFilters);
     filterInstEl.addEventListener("change", applyFilters);
     filterUFEl.addEventListener("change", applyFilters);
 
