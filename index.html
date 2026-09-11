@@ -570,21 +570,24 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      padding: 20px;
+      box-sizing: border-box;
     }
     #password-overlay.hidden { display: none; }
     .pw-box {
       background: #fff;
       border: 1px solid #e2e8f0;
-      border-radius: 18px;
-      padding: 40px 44px 36px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.10);
+      border-top: 3px solid #1a5e3f;
+      border-radius: 16px;
+      padding: 36px 40px 32px;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.08);
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 0;
-      min-width: 300px;
-      max-width: 360px;
       width: 100%;
+      max-width: 360px;
+      box-sizing: border-box;
     }
     #pw-logo {
       height: 72px;
@@ -593,22 +596,36 @@
       margin-bottom: 18px;
       cursor: default;
       user-select: none;
-      transition: transform 0.05s linear;
-      will-change: transform;
     }
     .pw-title {
-      font-size: 17px;
-      font-weight: 700;
+      font-size: 22px;
+      font-weight: 800;
       color: #1a1a2e;
-      margin-bottom: 6px;
-      letter-spacing: .3px;
+      margin-bottom: 4px;
+      letter-spacing: 1px;
       text-align: center;
     }
     .pw-subtitle {
-      font-size: 12px;
-      color: #888;
+      font-size: 12.5px;
+      color: #64748b;
+      margin-bottom: 6px;
+      text-align: center;
+    }
+    .pw-access {
+      font-size: 11px;
+      color: #94a3b8;
+      letter-spacing: .5px;
+      text-transform: uppercase;
       margin-bottom: 22px;
       text-align: center;
+    }
+    .pw-label {
+      width: 100%;
+      text-align: left;
+      font-size: 12px;
+      font-weight: 600;
+      color: #475569;
+      margin-bottom: 6px;
     }
     .pw-input-wrap { position: relative; width: 100%; margin-bottom: 12px; }
     .pw-input-wrap #pw-input { margin-bottom: 0; padding-right: 42px; }
@@ -650,7 +667,7 @@
     #pw-btn {
       width: 100%;
       padding: var(--space-3);
-      background: #1a1a2e;
+      background: #1a5e3f;
       color: #fff;
       border: none;
       border-radius: var(--radius-btn-lg);
@@ -660,7 +677,7 @@
       letter-spacing: .5px;
       transition: background var(--transition-fast);
     }
-    #pw-btn:hover { background: #2d2d5e; }
+    #pw-btn:hover { background: #14492f; }
     #pw-error {
       color: #d62c26;
       font-size: 12px;
@@ -806,7 +823,94 @@
        Esconde controles interativos e preserva cabeçalho, cards,
        gráficos e tabelas com as cores institucionais.
        ========================================================= */
+    /* Exploração local: mesma identidade institucional, sem serviços adicionais. */
+    .explore-summary { margin:0 0 16px; padding:18px 20px; border:1px solid var(--border-subtle); border-left:3px solid #1a5e3f; border-radius:12px; background:#fff; box-shadow:var(--shadow-card); }
+    .explore-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+    .explore-heading h3 { margin:0; font-size:15px; color:#1e3a5f; }
+    .explore-actions { display:flex; flex-wrap:wrap; gap:8px; }
+    .explore-actions .btn, .command-form .btn { font-size:12px; padding:8px 12px; }
+    .explore-summary p { margin:10px 0 0; font-size:13px; line-height:1.65; color:#475569; }
+    .explore-caption { color:#64748b; font-size:12px; line-height:1.5; margin:8px 0; }
+    .explore-tools { margin:0 0 16px; padding:12px 16px; border:1px solid var(--border-subtle); border-radius:12px; background:#fff; }
+    .explore-tools > summary { font-size:13px; color:#1e3a5f; padding:4px 0; }
+    .command-form { display:flex; gap:8px; margin-top:12px; }
+    .command-form input { flex:1; min-width:0; }
+    .command-examples { display:flex; flex-wrap:wrap; gap:6px; margin:10px 0; }
+    .command-examples button, .filter-chip { border:1px solid #d8e2ec; background:#f4f7fb; color:#274b70; border-radius:7px; padding:6px 9px; font:inherit; font-size:12px; cursor:pointer; text-align:left; overflow-wrap:anywhere; }
+    .command-examples button:hover, .filter-chip:hover { background:#e9f0f7; border-color:#8aa9c7; }
+    #commandFeedback { margin-top:8px; font-size:12px; line-height:1.5; color:#1a5e3f; }
+    #commandFeedback.is-error { color:#a52828; }
+    .explore-selections { display:flex; gap:6px; flex-wrap:wrap; margin-top:10px; }
+    .explore-selections:empty { display:none; }
+    button.card { font-family:inherit; text-align:left; cursor:pointer; flex:1 1 150px; min-width:150px; position:relative; transition:box-shadow var(--transition-fast),background var(--transition-fast); }
+    button.card:hover { background:#f8fafc; box-shadow:0 0 0 1px #a6bbce,var(--shadow-card); }
+    button.card[aria-pressed="true"] { background:#f0f5fa; box-shadow:0 0 0 2px #3b6ea5; }
+    .card-action { margin-top:12px; color:#64748b; font-size:11px; font-weight:400; }
+    button:focus-visible, summary:focus-visible { outline:2px solid #3b6ea5; outline-offset:3px; }
+    .chart-explore { margin:8px 0 4px; }
+    .chart-explore > summary { font-size:12px; font-weight:400; color:#52667b; }
+    .chart-explore-options { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0; }
+    .chart-explore-options button[aria-pressed="true"] { background:#ddeaf7; border-color:#3b6ea5; }
+    .legend-status .concl { background:#6b7280; }
+    .comparison-controls { display:grid; grid-template-columns:1.1fr 1fr 1fr; gap:12px; margin:14px 0; }
+    .comparison-controls label { display:block; min-width:0; font-size:12px; color:#475569; }
+    .comparison-controls select { margin-top:6px; }
+    .comparison-scroll { overflow-x:auto; }
+    .comparison-table { width:100%; border-collapse:collapse; font-size:13px; font-variant-numeric:tabular-nums; }
+    .comparison-table th, .comparison-table td { border-bottom:1px solid #e7edf3; padding:10px; text-align:right; overflow-wrap:anywhere; }
+    .comparison-table th:first-child, .comparison-table td:first-child { text-align:left; }
+    .comparison-table thead th { background:#f7f9fb; font-size:12px; color:#475569; width:25%; }
+    .comparison-meter { height:4px; margin-top:8px; border-radius:2px; background:#e9eff5; overflow:hidden; }
+    .comparison-meter span { display:block; height:100%; background:#3b6ea5; }
+    .comparison-table .group-b .comparison-meter span { background:#1a5e3f; }
+    .explore-drawer { box-sizing:border-box; width:min(480px,100vw); height:100dvh; max-height:100dvh; max-width:100vw; position:fixed; inset:0 0 0 auto; margin:0; padding:0; border:0; border-left:1px solid #d5dfe9; background:#fff; color:#1e293b; box-shadow:-8px 0 32px rgba(15,23,42,.15); }
+    .explore-drawer::backdrop { background:rgba(15,23,42,.28); }
+    body:has(.explore-drawer[open]) { overflow:hidden; }
+    .drawer-header { position:sticky; top:0; z-index:1; padding:20px; background:#fff; border-bottom:1px solid #e7edf3; }
+    .drawer-header h2 { margin:0; font-size:18px; color:#1e3a5f; overflow-wrap:anywhere; }
+    .drawer-header .explore-heading { flex-wrap:nowrap; align-items:flex-start; }
+    .drawer-header .btn { min-width:0; padding:7px 10px; font-size:12px; }
+    .drawer-list { padding:0 20px 24px; }
+    .drawer-record { padding:16px 0; border-bottom:1px solid #e7edf3; font-size:13px; line-height:1.55; overflow-wrap:anywhere; }
+    .drawer-record h3 { margin:0 0 4px; font-size:14px; color:#1e3a5f; }
+    .drawer-record p { margin:4px 0; }
+    .drawer-record dl { display:grid; grid-template-columns:95px 1fr; gap:6px 10px; }
+    .drawer-record dt { color:#64748b; }
+    .drawer-record dd { margin:0; }
+    .drawer-record summary { font-size:12px; color:#3b6ea5; }
+    .drawer-status { display:inline-block; padding:2px 7px; border-radius:5px; background:#f1f5f9; font-size:11px; color:#475569; }
+    #chartScope { margin:0 0 12px; }
+    #operationalCharts[aria-busy="true"] { opacity:.65; pointer-events:none; }
+    @media (max-width:980px) {
+      #viewOperacional > .sidebar { box-sizing:border-box; width:100%; flex:auto; }
+      #viewOperacional > .main { min-width:0; width:100%; }
+      #viewOperacional .panel { box-sizing:border-box; min-width:0; width:100%; flex-basis:100%; }
+      .table-scroll .tbl { min-width:1050px; }
+    }
+    @media (max-width:600px) {
+      #password-overlay { padding:16px; }
+      .pw-box { padding:30px 22px 26px; border-radius:14px; }
+      .pw-title { font-size:20px; }
+      .topbar { padding:16px; }
+      .brand { flex-direction:column; align-items:flex-start; gap:12px; }
+      .brand-logos { padding:28px 0 0; border-right:0; max-width:100%; }
+      .brand-text { min-width:0; max-width:100%; }
+      .brand-text .title { font-size:18px; line-height:1.3; }
+      .logout-btn { top:12px; right:12px; padding:7px 10px; }
+      .comparison-controls { grid-template-columns:1fr; }
+      .command-form { flex-wrap:wrap; }
+      .command-form input { flex-basis:100%; }
+      .explore-summary { padding:14px; }
+      button.card { min-width:120px; padding:16px; }
+      .comparison-table th, .comparison-table td { padding:8px 5px; font-size:11px; }
+    }
     @media print {
+      .explore-tools, .explore-actions, .explore-drawer, .chart-explore, .card-action, #local-geo-panel { display:none !important; }
+      .explore-drawer::backdrop { display:none; }
+      body:has(.explore-drawer[open]) { overflow:visible; }
+      #operationalCharts[aria-busy="true"] { opacity:1; }
+      .filter-chip { border:0; padding:0; }
+      .table-scroll .tbl { min-width:0; }
       @page { size: A4 landscape; margin: 12mm; }
       /* preserva backgrounds/cores dos cards, badges e gráficos no papel */
       * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
@@ -851,8 +955,10 @@
   <div id="password-overlay">
     <div class="pw-box">
       <img id="pw-logo" src="./assets/fvs-logo.png" alt="FVS-RCP" />
-      <div class="pw-title">Acesso restrito</div>
-      <div class="pw-subtitle">FVS-RCP • DEPI</div>
+      <div class="pw-title">FAROL</div>
+      <div class="pw-subtitle">Monitoramento de instrumentos institucionais</div>
+      <div class="pw-access">Acesso restrito • FVS-RCP • DEPI</div>
+      <label for="pw-input" class="pw-label">Senha de acesso</label>
       <div class="pw-input-wrap">
         <input id="pw-input" type="password" placeholder="Senha" autocomplete="current-password" />
         <button id="pw-toggle" type="button" aria-label="Mostrar senha" title="Mostrar senha">
@@ -861,7 +967,7 @@
           </svg>
         </button>
       </div>
-      <button id="pw-btn" type="button">Acessar</button>
+      <button id="pw-btn" type="button">Acessar painel</button>
       <div id="pw-error"></div>
     </div>
   </div>
@@ -961,28 +1067,74 @@
 
     <main class="main">
       <div class="cards">
-        <div class="card kpi-blue">
+        <button type="button" class="card kpi-blue" data-kpi="total" aria-pressed="false" aria-haspopup="dialog">
           <div class="kpiLabel">Total</div>
           <div class="value" id="kpi_total">—</div>
-        </div>
-        <div class="card kpi-green">
+          <span class="card-action">Ver instrumentos →</span>
+        </button>
+        <button type="button" class="card kpi-green" data-kpi="ativos" aria-pressed="false" aria-haspopup="dialog">
           <div class="kpiLabel">Ativos</div>
           <div class="value" id="kpi_vigentes">—</div>
-        </div>
-        <div class="card kpi-amber">
+          <span class="card-action">Explorar ativos →</span>
+        </button>
+        <button type="button" class="card kpi-amber" data-kpi="ALERTA 180 DIAS" aria-pressed="false" aria-haspopup="dialog">
           <div class="kpiLabel">Atenção (61–180 dias)</div>
           <div class="value" id="kpi_alerta">—</div>
-        </div>
-        <div class="card kpi-red">
+          <span class="card-action">Explorar atenção →</span>
+        </button>
+        <button type="button" class="card kpi-red" data-kpi="CRÍTICO 60 DIAS" aria-pressed="false" aria-haspopup="dialog">
           <div class="kpiLabel">Crítico (≤60 dias)</div>
           <div class="value" id="kpi_critico">—</div>
-        </div>
-        <div class="card kpi-slate">
+          <span class="card-action">Explorar críticos →</span>
+        </button>
+        <button type="button" class="card kpi-slate" data-kpi="concluidos" aria-pressed="false" aria-haspopup="dialog">
           <div class="kpiLabel">Concluídos</div>
           <div class="value" id="kpi_concluidos">—</div>
-        </div>
+          <span class="card-action">Explorar concluídos →</span>
+        </button>
       </div>
 
+      <section class="explore-summary" aria-labelledby="executiveTitle">
+        <div class="explore-heading">
+          <h3 id="executiveTitle">Resumo executivo</h3>
+          <div class="explore-actions">
+            <button class="btn" type="button" id="openCurrentRows" aria-haspopup="dialog">Ver instrumentos</button>
+            <button class="btn" type="button" id="openCommands" aria-controls="commandPanel" aria-expanded="false">Pesquisar por comandos</button>
+            <button class="btn" type="button" id="openComparison" aria-controls="comparisonPanel" aria-expanded="false">Comparar</button>
+          </div>
+        </div>
+        <p id="executiveSummary" aria-live="polite">Carregando instrumentos…</p>
+        <div id="exploreSelections" class="explore-selections" aria-label="Filtros aplicados; selecione para remover"></div>
+      </section>
+
+      <details class="explore-tools" id="commandPanel">
+        <summary>Pesquisa por comandos</summary>
+        <p class="explore-caption" id="commandHelp">Use os exemplos ou combine campos com ponto e vírgula. Ao aplicar, o comando substitui os filtros atuais. A pesquisa livre permanece disponível na lateral.</p>
+        <form id="commandForm" class="command-form">
+          <input id="commandInput" class="select" type="text" aria-label="Comando de pesquisa" aria-describedby="commandHelp commandFeedback" placeholder="Ex.: uf:AM; situação:ativos" autocomplete="off" maxlength="600" />
+          <button class="btn" type="submit">Aplicar comando</button>
+        </form>
+        <div class="command-examples" id="commandExamples"></div>
+        <p class="explore-caption">Campos: <strong>uf, instituição, diretoria, tipo, início, encerramento, situação</strong>. Anos múltiplos: início:2023,2024. Situações: ativos, concluídos, vigente, atenção, crítico e sem data.</p>
+        <div id="commandFeedback" role="status" aria-live="polite"></div>
+      </details>
+
+      <details class="explore-tools" id="comparisonPanel">
+        <summary>Comparação de instrumentos</summary>
+        <p class="explore-caption">Base completa, sem arquivados. Esta comparação é independente dos filtros operacionais. Os status são calculados na data de hoje, inclusive ao comparar anos anteriores.</p>
+        <div class="comparison-controls">
+          <label>Comparar por<select id="compareDimension" class="select">
+            <option value="uf">UF</option><option value="instituicao">Instituição parceira</option><option value="diretoria">Diretoria</option>
+            <option value="inicio">Ano de início da vigência</option><option value="termino">Ano de encerramento</option>
+          </select></label>
+          <label>Grupo A<select id="compareA" class="select"></select></label>
+          <label>Grupo B<select id="compareB" class="select"></select></label>
+        </div>
+        <div id="comparisonResult" aria-live="polite"></div>
+      </details>
+
+      <p id="chartScope" class="explore-caption" role="status">Gráficos, cards e tabelas mostram o mesmo recorte. Clique para filtrar e ver os instrumentos.</p>
+      <div id="operationalCharts" aria-busy="false">
       <div class="row">
         <div class="panel">
           <h3>Situação dos instrumentos</h3>
@@ -992,6 +1144,7 @@
             <div class="item"><span class="box vig"></span><span>VIGENTE</span></div>
             <div class="item"><span class="box alt"></span><span>ATENÇÃO (61–180 dias)</span></div>
             <div class="item"><span class="box crit"></span><span>CRÍTICO (≤60 dias)</span></div>
+            <div class="item"><span class="box concl"></span><span>CONCLUÍDO (vencido)</span></div>
             <div class="item"><span class="box sem"></span><span>SEM DATA</span></div>
           </div>
         </div>
@@ -1023,6 +1176,7 @@
         </div>
       </div>
 
+      </div><!-- operationalCharts -->
       <div class="panel" style="margin-top:14px;">
         <div class="legenda">
           <strong>Legenda</strong><br>
@@ -1172,6 +1326,15 @@
   </footer>
 
   <!-- PAINEL GEO LOCAL DE PARCERIAS — Leaflet -->
+  <dialog id="exploreDrawer" class="explore-drawer" aria-labelledby="drawerTitle" aria-describedby="drawerContext">
+    <header class="drawer-header">
+      <div class="explore-heading"><h2 id="drawerTitle">Instrumentos do recorte</h2><button class="btn" type="button" id="closeDrawer" autofocus>Fechar ✕</button></div>
+      <p id="drawerContext" class="explore-caption"></p>
+      <button class="btn" type="button" id="drawerToTable">Ver na tabela</button>
+    </header>
+    <div id="drawerList" class="drawer-list"></div>
+  </dialog>
+
   <div id="local-geo-panel" role="complementary" aria-label="Mapa local de parcerias">
     <div id="local-geo-header">
       <div id="local-geo-header-left">
@@ -1233,18 +1396,7 @@
         });
       }
 
-      // logo segue o mouse — máx 6px, sem rotação
-      document.addEventListener("mousemove", (e) => {
-        if (overlay.classList.contains("hidden")) return;
-        const rect = logo.getBoundingClientRect();
-        const cx = rect.left + rect.width / 2;
-        const cy = rect.top  + rect.height / 2;
-        const dx = (e.clientX - cx) / window.innerWidth  * 12;
-        const dy = (e.clientY - cy) / window.innerHeight * 12;
-        const mx = Math.max(-6, Math.min(6, dx));
-        const my = Math.max(-6, Math.min(6, dy));
-        logo.style.transform = `translate(${mx}px, ${my}px)`;
-      });
+      // logo estático — movimento que seguia o mouse removido (apresentação institucional estável)
     })();
 
     // =========================
@@ -1431,6 +1583,113 @@
       return computeStatus(row);
     }
 
+    // Consultas locais: nunca escrevem em tbl nem alteram as regras de vigência.
+    const UF_NOMES = {
+      AC:"Acre", AL:"Alagoas", AP:"Amapá", AM:"Amazonas", BA:"Bahia", CE:"Ceará", DF:"Distrito Federal",
+      ES:"Espírito Santo", GO:"Goiás", MA:"Maranhão", MT:"Mato Grosso", MS:"Mato Grosso do Sul",
+      MG:"Minas Gerais", PA:"Pará", PB:"Paraíba", PR:"Paraná", PE:"Pernambuco", PI:"Piauí",
+      RJ:"Rio de Janeiro", RN:"Rio Grande do Norte", RS:"Rio Grande do Sul", RO:"Rondônia", RR:"Roraima",
+      SC:"Santa Catarina", SP:"São Paulo", SE:"Sergipe", TO:"Tocantins"
+    };
+
+    function commandNorm(value) {
+      return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim().replace(/\s+/g, " ");
+    }
+
+    function getExplorationRows(rows, selection) {
+      return rows.filter(r => {
+        if (isArquivado(r)) return false;
+        if (selection.scope === "ativos" && isConcluido(r)) return false;
+        if (selection.scope === "concluidos" && !isConcluido(r)) return false;
+        if (selection.bucket && statusBucket(r) !== selection.bucket) return false;
+        if (selection.diretoria && String(getFirst(r, CAMPOS.diretoria)).trim() !== selection.diretoria) return false;
+        return true;
+      });
+    }
+
+    function summarizeRows(rows) {
+      const base = rows.filter(r => !isArquivado(r));
+      const active = base.filter(r => !isConcluido(r));
+      const dated = active.filter(r => parseDateAny(getFirst(r, CAMPOS.termino)));
+      dated.sort((a,b) => parseDateAny(getFirst(a, CAMPOS.termino)) - parseDateAny(getFirst(b, CAMPOS.termino)));
+      return {
+        total:base.length, ativos:active.length, concluidos:base.length - active.length,
+        atencao:active.filter(r => computeStatus(r) === "ALERTA 180 DIAS").length,
+        critico:active.filter(r => computeStatus(r) === "CRÍTICO 60 DIAS").length,
+        semData:base.filter(r => computeStatus(r) === "SEM DATA").length,
+        proximo:dated[0] || null
+      };
+    }
+
+    function comparisonValue(row, dimension) {
+      if (dimension === "uf") return getUF(row);
+      if (dimension === "inicio" || dimension === "termino") {
+        const date = parseDateAny(getFirst(row, CAMPOS[dimension]));
+        return date ? String(date.getFullYear()) : "";
+      }
+      if (dimension === "instituicao" || dimension === "diretoria") return String(getFirst(row, CAMPOS[dimension])).trim();
+      return "";
+    }
+
+    function comparisonRows(rows, dimension, value) {
+      return rows.filter(r => !isArquivado(r) && value && comparisonValue(r, dimension) === value);
+    }
+
+    // Gramática deliberadamente limitada e explícita. Um erro invalida TODO o comando.
+    function resolveCommand(text, rows) {
+      const base = rows.filter(r => !isArquivado(r));
+      let query = String(text || "").trim();
+      if (!query || query.length > 600) return {error:"Digite um comando usando os exemplos abaixo."};
+      const normalized = commandNorm(query);
+      if (!query.includes(":")) {
+        let match = normalized.match(/^(?:vencem|encerram) em (\d{4})$/);
+        if (match) query = "encerramento:" + match[1];
+        else if ((match = normalized.match(/^(?:iniciados|iniciam) em (\d{4})$/))) query = "inicio:" + match[1];
+        else if ((match = normalized.match(/^instrumentos (?:do|da|de) (.+)$/))) {
+          const uf = Object.keys(UF_NOMES).find(k => commandNorm(UF_NOMES[k]) === match[1] || k.toLowerCase() === match[1]);
+          query = uf ? "uf:" + uf : "instituicao:" + match[1];
+        } else if ((match = normalized.match(/^acts? (?:do|da|de) (.+)$/))) query = "tipo:ACT; instituicao:" + match[1];
+        else if (/^(?:instrumentos )?(ativos|concluidos|vencidos|criticos?|atencao|sem data|vigentes?)$/.test(normalized)) query = "situacao:" + normalized.replace(/^instrumentos /, "");
+        else return {error:"Comando não reconhecido. Use, por exemplo, uf:AM; situação:ativos ou vencem em 2027."};
+      }
+      const aliases = {uf:"uf",instituicao:"instituicao",diretoria:"diretoria",tipo:"tipo",inicio:"inicio",encerramento:"termino",termino:"termino",situacao:"situacao",status:"situacao"};
+      const filters = {};
+      const used = new Set();
+      const parts = query.split(";").map(p => p.trim()).filter(Boolean);
+      for (const part of parts) {
+        const colon = part.indexOf(":");
+        const field = commandNorm(part.slice(0, colon));
+        const key = Object.hasOwn(aliases,field) ? aliases[field] : "";
+        const raw = part.slice(colon + 1).trim();
+        if (colon < 1 || !key || !raw) return {error:"Campo inválido ou sem valor. Use uf, instituição, diretoria, tipo, início, encerramento ou situação."};
+        if (used.has(key)) return {error:"Cada campo deve aparecer uma vez. Para vários anos, use vírgulas."};
+        used.add(key);
+        const value = commandNorm(raw);
+        if (key === "situacao") {
+          const statuses = {ativo:["scope","ativos"],ativos:["scope","ativos"],concluido:["scope","concluidos"],concluidos:["scope","concluidos"],vencido:["scope","concluidos"],vencidos:["scope","concluidos"],vigente:["bucket","VIGENTE"],vigentes:["bucket","VIGENTE"],atencao:["bucket","ALERTA 180 DIAS"],alerta:["bucket","ALERTA 180 DIAS"],critico:["bucket","CRÍTICO 60 DIAS"],criticos:["bucket","CRÍTICO 60 DIAS"],"sem data":["bucket","SEM DATA"]};
+          const result = Object.hasOwn(statuses,value) ? statuses[value] : null;
+          if (!result) return {error:"Situação não reconhecida. Use ativos, concluídos, vigente, atenção, crítico ou sem data."};
+          filters[result[0]] = result[1];
+        } else if (key === "inicio" || key === "termino") {
+          const years = raw.split(",").map(y => y.trim());
+          const available = new Set(base.map(r => comparisonValue(r,key)).filter(Boolean));
+          if (years.some(y => !/^\d{4}$/.test(y) || !available.has(y))) return {error:`Ano não encontrado para ${key === "inicio" ? "início da vigência" : "encerramento"}. Disponíveis: ${Array.from(available).sort().join(", ") || "nenhum"}.`};
+          filters[key] = Array.from(new Set(years));
+        } else if (key === "uf") {
+          const uf = Object.keys(UF_NOMES).find(k => k.toLowerCase() === value || commandNorm(UF_NOMES[k]) === value);
+          if (!uf || !base.some(r => getUF(r) === uf)) return {error:"UF não encontrada nos instrumentos carregados. Consulte o filtro UF."};
+          filters.uf = uf;
+        } else {
+          const available = Array.from(new Set(base.map(r => String(getFirst(r,CAMPOS[key])).trim()).filter(Boolean)));
+          const exact = available.filter(v => commandNorm(v) === value);
+          const matches = exact.length ? exact : (value.length >= 2 ? available.filter(v => commandNorm(v).includes(value)) : []);
+          if (matches.length !== 1) return {error:matches.length ? `Nome ambíguo em ${key}. Especifique: ${matches.slice(0,4).join(" • ")}.` : `Nenhum valor encontrado em ${key}. Confira o nome registrado na base.`};
+          filters[key] = matches[0];
+        }
+      }
+      return Object.keys(filters).length ? {filters} : {error:"Digite pelo menos um campo e seu valor."};
+    }
+
     // =========================
     // Estado
     // =========================
@@ -1440,6 +1699,13 @@
     let selectedEndYears = new Set();
     let lastActiveRows = [];
     let lastConclRows  = [];
+    let exploreSelection = {scope:"", bucket:"", diretoria:""};
+    let drawerMode = "operacional";
+    let drawerReturnFocus = null;
+    let chartPendingRows = null;
+    let chartRendering = false;
+    let chartTimer = null;
+    let bordersPromise = null;
 
     // =========================
     // Elementos
@@ -1693,8 +1959,10 @@
       const counts = { "VIGENTE": 0, "ALERTA 180 DIAS": 0, "CRÍTICO 60 DIAS": 0, "VENCIDO": 0, "SEM DATA": 0 };
       base.forEach(r => { counts[statusBucket(r)] = (counts[statusBucket(r)] || 0) + 1; });
 
-      Plotly.newPlot("chart_status", [{
+      const buckets = Object.keys(counts);
+      return Plotly.react("chart_status", [{
         type: "pie",
+        customdata: buckets,
         labels: ["VIGENTE", "ATENÇÃO (61–180 dias)", "CRÍTICO (≤60 dias)", "CONCLUÍDO (vencido)", "SEM DATA"],
         values: [counts["VIGENTE"], counts["ALERTA 180 DIAS"], counts["CRÍTICO 60 DIAS"], counts["VENCIDO"], counts["SEM DATA"]],
         hole: 0.55,
@@ -1707,8 +1975,11 @@
       }], {
         height: 320,
         margin: { t: 10, r: 10, b: 10, l: 10 },
-        font: { family: "var(--font-family-base)", size: 12, color: "#475569" }
-      }, { displayModeBar:false, responsive:true });
+        font: { family: "var(--font-family-base)", size: 12, color: "#475569" },
+        annotations: base.length ? [] : [{text:"Sem instrumentos neste recorte",showarrow:false,x:0.5,y:0.5}]
+      }, { displayModeBar:false, responsive:true }).then(() => {
+        bindChartExplore("chart_status","bucket",buckets.map(value => ({value,label:value + " · " + counts[value]})),exploreSelection.bucket,p => buckets[p.pointNumbers?.[0] ?? p.pointNumber]);
+      });
     }
 
     function buildVencBar(rows) {
@@ -1754,7 +2025,7 @@
       const xPretty = months.map(m => m.replace(/(^\w)/, c => c.toUpperCase()));
 
       const chartEl = document.getElementById("chart_venc");
-      Plotly.newPlot(chartEl, [{
+      return Plotly.react(chartEl, [{
         type: "bar",
         x: xPretty,
         y,
@@ -1762,16 +2033,13 @@
         showlegend: false
       }], {
         height: 320,
-        xaxis: { tickangle: -45, automargin: true },
+        xaxis: { tickangle: -45, automargin: true, type:"category" },
+        yaxis: { rangemode:"tozero", dtick:1 },
+        annotations: months.length ? [] : [{text:"Sem vencimentos de ativos neste recorte",showarrow:false,xref:"paper",yref:"paper",x:0.5,y:0.5}],
         margin: { t: 30, r: 20, b: 90, l: 50 },
         font: { family: "var(--font-family-base)", size: 12, color: "#475569" }
-      }, { displayModeBar:false, responsive:true });
-
-      chartEl.on("plotly_click", (data) => {
-        if (!data || !data.points || !data.points.length) return;
-        const clicked = norm(data.points[0].x);
-        activeMonth = (activeMonth === clicked) ? null : clicked;
-        applyFilters();
+      }, { displayModeBar:false, responsive:true }).then(() => {
+        bindChartExplore("chart_venc","month",months.map((value,i) => ({value,label:xPretty[i] + " · " + y[i]})),activeMonth,p => norm(p.x));
       });
     }
 
@@ -1786,22 +2054,16 @@
       });
 
       const chartEl = document.getElementById("chart_dir");
-      if (byDir.size === 0) {
-        Plotly.purge(chartEl);
-        chartEl.innerHTML = `<div class="muted">Sem dados de diretoria para plotar.</div>`;
-        return;
-      }
-
       const items = Array.from(byDir.entries()).sort((a,b) => b[1] - a[1]);
       const y = items.map(([dir]) => dir);
       const x = items.map(([,count]) => count);
 
-      Plotly.newPlot(chartEl, [{
+      return Plotly.react(chartEl, [{
         type: "bar",
         orientation: "h",
         y,
         x,
-        marker: { color: "#6b7280" },
+        marker: { color: y.map(dir => dir === exploreSelection.diretoria ? "#3b6ea5" : "#6b7280") },
         text: x.map(v => String(v)),
         textposition: "outside",
         cliponaxis: false,
@@ -1810,10 +2072,13 @@
       }], {
         height: 320,
         margin: { t: 10, r: 30, b: 30, l: 160 },
-        xaxis: { title: "Quantidade", rangemode: "tozero", automargin: true },
+        xaxis: { title: "Quantidade", rangemode: "tozero", automargin: true, dtick:1 },
         yaxis: { automargin: true },
+        annotations: items.length ? [] : [{text:"Sem diretorias neste recorte",showarrow:false,xref:"paper",yref:"paper",x:0.5,y:0.5}],
         font: { family: "var(--font-family-base)", size: 12, color: "#475569" }
-      }, { displayModeBar:false, responsive:true });
+      }, { displayModeBar:false, responsive:true }).then(() => {
+        bindChartExplore("chart_dir","diretoria",items.map(([value,count]) => ({value,label:value + " · " + count})),exploreSelection.diretoria,p => p.y);
+      });
     }
 
     // =========================
@@ -1867,9 +2132,13 @@
         height: 320,
         margin: { t: 10, r: 20, b: 40, l: 40 },
         xaxis: { title: "Ano da assinatura", dtick: 1 },
-        yaxis: { title: "Quantidade", rangemode: "tozero" },
+        yaxis: { title: "Quantidade", rangemode: "tozero", dtick:1 },
         font: { family: "var(--font-family-base)", size: 12, color: "#475569" }
-      }, { displayModeBar: false, responsive: true });
+      }, { displayModeBar: false, responsive: true }).then(() => {
+        bindChartExplore("chart_hist_evolucao","",years.map((value,i) => ({value,label:value + " · " + values[i]})),null,p => Number(p.x),year => {
+          openExplorer(base.filter(r => getHistEntry(r)?.year === year),"Formalização · " + year,"Base histórica completa. Assinatura registrada tem prioridade; a ausência é sinalizada por instrumento.","historico");
+        });
+      });
     }
 
     function buildHistTipoChart(rows) {
@@ -1906,9 +2175,13 @@
         height: 320,
         margin: { t: 20, r: 20, b: 40, l: 40 },
         xaxis: { automargin: true },
-        yaxis: { title: "Quantidade", rangemode: "tozero" },
+        yaxis: { title: "Quantidade", rangemode: "tozero", dtick:1 },
         font: { family: "var(--font-family-base)", size: 12, color: "#475569" }
-      }, { displayModeBar: false, responsive: true });
+      }, { displayModeBar: false, responsive: true }).then(() => {
+        bindChartExplore("chart_hist_tipo","",items.map(([value,count]) => ({value,label:value + " · " + count})),null,p => p.x,type => {
+          openExplorer(base.filter(r => String(getFirst(r,CAMPOS.tipo)).trim() === type),"Tipo · " + type,"Base histórica completa, independente dos filtros operacionais.","historico");
+        });
+      });
     }
 
     function buildHistTimeline(rows) {
@@ -2022,6 +2295,7 @@
       tabBtnOperacionalEl.setAttribute("aria-selected", String(!isHist));
       tabBtnHistoricoEl.setAttribute("aria-selected", String(isHist));
       if (isHist) buildHistorico(tbl);
+      else queueOperationalCharts(lastActiveRows.concat(lastConclRows));
     }
 
     tabBtnOperacionalEl.addEventListener("click", () => showView("operacional"));
@@ -2078,7 +2352,7 @@
       const connLons = [];
 
       // Dados para pontos parceiros (exceto AM)
-      const pLats = [], pLons = [], pTexts = [], pSizes = [];
+      const pLats = [], pLons = [], pTexts = [], pSizes = [], pUFs = [];
 
       ufs.forEach(uf => {
         if (uf === "AM") return;
@@ -2089,6 +2363,7 @@
         const count = info.ids.size;
         pLats.push(coord[0]);
         pLons.push(coord[1]);
+        pUFs.push(uf);
         pSizes.push(8);
         pTexts.push(uf === "CE" ? `Ceará<br><b>${count}</b>` : `${uf} — ACTs: ${count}`);
 
@@ -2118,6 +2393,7 @@
         lat: pLats,
         lon: pLons,
         text: pTexts,
+        customdata: pUFs,
         mode: "markers",
         marker: {
           size: pSizes,
@@ -2144,6 +2420,7 @@
 
       const traceAM = {
         type: "scattergeo",
+        customdata: ["AM"],
         lat: [AM_COORD[0]],
         lon: [AM_COORD[1]],
         text: [
@@ -2197,10 +2474,14 @@
       };
 
       const plotTraces = (extraTraces) => {
-        Plotly.newPlot(chartEl, [...extraTraces, traceLines, tracePartners, traceAM], layout,
+        return Plotly.react(chartEl, [...extraTraces, traceLines, tracePartners, traceAM], layout,
           { displayModeBar: false, responsive: true }
-        );
+        ).then(() => {
+        bindChartExplore("chart_map","uf",ufs.map(value => ({value,label:value + " — " + (UF_NOMES[value] || value) + " · " + byUF.get(value).ids.size})),filterUFEl.value,p => p.customdata);
+        chartEl.removeAllListeners("plotly_hover");
+        chartEl.removeAllListeners("plotly_unhover");
         chartEl.on("plotly_hover", (evtData) => {
+          if (document.getElementById("exploreDrawer").open || document.getElementById("operationalCharts").getAttribute("aria-busy") === "true") return;
           cancelGeoClose();
           if (!evtData || !evtData.points || !evtData.points.length) return;
           const txt = String(evtData.points[0].text || "");
@@ -2211,9 +2492,10 @@
           if (uf) openGeoPanel(uf);
         });
         chartEl.on("plotly_unhover", () => scheduleGeoClose());
+        });
       };
 
-      fetch("assets/br_states.geojson")
+      if (!bordersPromise) bordersPromise = fetch("assets/br_states.geojson")
         .then(r => r.json())
         .then(geojson => {
           const bLats = [], bLons = [];
@@ -2236,9 +2518,10 @@
             hoverinfo: "skip",
             showlegend: false
           };
-          plotTraces([traceBorders]);
+          return [traceBorders];
         })
-        .catch(() => plotTraces([]));
+        .catch(() => []);
+      return bordersPromise.then(plotTraces);
     }
 
     // =========================
@@ -2265,7 +2548,7 @@
             const rawVenc = getFirst(r, CAMPOS.termino);
             const d = parseDateAny(rawVenc);
             if (!d) return false;
-            return monthLabelFromDate(d) === activeMonth;
+            return !isConcluido(r) && monthLabelFromDate(d) === activeMonth;
           });
         }
         if (selectedYears.size > 0) {
@@ -2295,7 +2578,7 @@
           const proc  = norm(getFirst(r, CAMPOS.processo));
           return ident.includes(qq) || inst.includes(qq) || dir.includes(qq) || proc.includes(qq);
         });
-        return rows;
+        return getExplorationRows(rows, exploreSelection);
       }
 
       const activeRows = applyUI(activeBase);
@@ -2325,13 +2608,13 @@
       render(conclRows,  tbodyConclEl);
       updateKPIs(activeRows, conclRows);
 
-      const anyFilter = Boolean(activeMonth || qq || selectedYears.size > 0 || selectedEndYears.size > 0 || tipo || statusSel || instSel || ufSel);
+      const anyFilter = Boolean(activeMonth || qq || selectedYears.size > 0 || selectedEndYears.size > 0 || tipo || statusSel || instSel || ufSel || exploreSelection.scope || exploreSelection.bucket || exploreSelection.diretoria);
 
       activeCountLabelEl.textContent = anyFilter
         ? `Exibindo ${activeRows.length} de ${activeBase.length} instrumentos`
         : `Exibindo todos os ${activeBase.length} instrumentos`;
 
-      const filterCount = [activeMonth, selectedYears.size > 0, selectedEndYears.size > 0, tipo, instSel, ufSel, statusSel].filter(Boolean).length;
+      const filterCount = [activeMonth, qq, selectedYears.size > 0, selectedEndYears.size > 0, tipo, instSel, ufSel, statusSel, exploreSelection.scope, exploreSelection.bucket, exploreSelection.diretoria].filter(Boolean).length;
       filterCountEl.textContent = filterCount > 0 ? ` • ${filterCount} ativo${filterCount === 1 ? "" : "s"}` : "";
 
       if (anyFilter) {
@@ -2351,16 +2634,257 @@
       if (ufSel)       hints.push(`UF: ${ufSel}`);
       if (statusSel)   hints.push(`status: ${statusSel}`);
       if (qq)          hints.push(`pesquisa`);
+      if (exploreSelection.scope) hints.push(`situação: ${exploreSelection.scope === "ativos" ? "ativos" : "concluídos"}`);
+      if (exploreSelection.bucket) hints.push(`situação do gráfico: ${exploreSelection.bucket}`);
+      if (exploreSelection.diretoria) hints.push(`diretoria: ${exploreSelection.diretoria}`);
       hintEl.textContent = hints.length
-        ? `Filtro ativo → ${hints.join(" • ")}. (Clique no mesmo mês no gráfico para limpar o mês.)`
+        ? `Filtro ativo → ${hints.join(" • ")}. Remova seleções no resumo executivo ou use Limpar filtros.`
         : "";
+      updateExplorationUI(activeRows.concat(conclRows), anyFilter);
+      queueOperationalCharts(activeRows.concat(conclRows));
+    }
+
+    // =========================
+    // Exploração: estado de interface, resumo, comandos e comparação.
+    // =========================
+    function updateExplorationUI(rows, filtered) {
+      const stats = summarizeRows(rows);
+      const summary = document.getElementById("executiveSummary");
+      let text = stats.total
+        ? `${filtered ? "No recorte atual" : "Na base completa"}: ${stats.total} instrumento(s), ${stats.ativos} ativo(s) e ${stats.concluidos} concluído(s). Entre os ativos, ${stats.atencao} em atenção e ${stats.critico} em situação crítica. ${stats.semData} com status SEM DATA.`
+        : "Nenhum instrumento corresponde aos filtros atuais. Remova uma seleção abaixo ou use Limpar filtros.";
+      if (stats.proximo) text += ` Próximo vencimento entre os ativos: ${formatDateBR(getFirst(stats.proximo,CAMPOS.termino))} — ${getFirst(stats.proximo,CAMPOS.idDisplay) || "sem identificação"} (${getFirst(stats.proximo,CAMPOS.instituicao) || "instituição não registrada"}).`;
+      else if (stats.ativos) text += " Nenhum ativo do recorte tem data de vencimento registrada.";
+      summary.textContent = text;
+      const chips = document.getElementById("exploreSelections");
+      chips.replaceChildren();
+      const addChip = (label, remove) => {
+        const btn = document.createElement("button");
+        btn.type = "button"; btn.className = "filter-chip"; btn.textContent = label + " ×";
+        btn.setAttribute("aria-label", "Remover filtro: " + label);
+        btn.addEventListener("click", () => { remove(); applyFilters(); document.getElementById("openCurrentRows").focus(); });
+        chips.appendChild(btn);
+      };
+      if (quickSearchEl.value) addChip("Pesquisa: " + quickSearchEl.value, () => { quickSearchEl.value = ""; });
+      if (activeMonth) addChip("Vencimento: " + activeMonth, () => { activeMonth = null; });
+      if (selectedYears.size) addChip("Início: " + Array.from(selectedYears).sort().join(", "), () => { selectedYears.clear(); updateYearMultiselectUI(); });
+      if (selectedEndYears.size) addChip("Encerramento: " + Array.from(selectedEndYears).sort().join(", "), () => { selectedEndYears.clear(); updateYearEndMultiselectUI(); });
+      [["Tipo",filterTipoEl],["Instituição",filterInstEl],["UF",filterUFEl],["Status",filterStatusEl]].forEach(([label,el]) => {
+        if (el.value) addChip(label + ": " + el.options[el.selectedIndex].text, () => { el.value = ""; });
+      });
+      if (exploreSelection.scope) addChip(exploreSelection.scope === "ativos" ? "Somente ativos" : "Somente concluídos", () => { exploreSelection.scope = ""; });
+      if (exploreSelection.bucket) addChip("Situação: " + exploreSelection.bucket, () => { exploreSelection.bucket = ""; });
+      if (exploreSelection.diretoria) addChip("Diretoria: " + exploreSelection.diretoria, () => { exploreSelection.diretoria = ""; });
+      document.querySelectorAll("[data-kpi]").forEach(btn => {
+        const key = btn.dataset.kpi;
+        btn.setAttribute("aria-pressed", String(key !== "total" && (exploreSelection.scope === key || exploreSelection.bucket === key)));
+      });
+      if (document.getElementById("exploreDrawer").open && drawerMode === "operacional") fillDrawer(rows, "Instrumentos do recorte", "Filtros operacionais atuais. Atenção e Crítico são subconjuntos dos Ativos.");
+    }
+
+    function fillDrawer(rows, title, context) {
+      document.getElementById("drawerTitle").textContent = title;
+      document.getElementById("drawerContext").textContent = `${rows.length} instrumento(s). ${context}`;
+      document.getElementById("drawerToTable").hidden = drawerMode !== "operacional";
+      const html = rows.map(r => {
+        const historical = drawerMode === "historico" ? getHistEntry(r) : null;
+        const histText = historical ? (historical.assinaturaConhecida ? "Assinatura: " + formatDateBR(historical.date) : "Assinatura não registrada — ano baseado no início da vigência: " + historical.year) : "";
+        return `<article class="drawer-record">
+          <h3>${escapeHTML(getFirst(r,CAMPOS.idDisplay) || "Sem identificação")} <span class="drawer-status">${escapeHTML(statusBucket(r))}</span></h3>
+          <p>${escapeHTML(getFirst(r,CAMPOS.instituicao) || "Instituição não registrada")}</p>
+          <p class="explore-caption">${escapeHTML(getFirst(r,CAMPOS.diretoria) || "Diretoria não registrada")} · ${escapeHTML(getUF(r) || "UF não registrada")}</p>
+          <p>Vencimento: <strong>${escapeHTML(formatDateBR(getFirst(r,CAMPOS.termino)) || "Sem data")}</strong></p>
+          ${histText ? `<p class="explore-caption">${escapeHTML(histText)}</p>` : ""}
+          <details><summary>Ver informações do instrumento</summary>
+            <dl><dt>Tipo</dt><dd>${escapeHTML(getFirst(r,CAMPOS.tipo) || "—")}</dd>
+            <dt>Início</dt><dd>${escapeHTML(formatDateBR(getFirst(r,CAMPOS.inicio)) || "—")}</dd>
+            <dt>Processo</dt><dd>${escapeHTML(getFirst(r,CAMPOS.processo) || "—")}</dd></dl>
+            <strong>Objetivo</strong>${makeUl(splitBullets(getFirst(r,CAMPOS.objetivo)))}
+            <strong>Produtos</strong>${makeUl(splitBullets(getFirst(r,CAMPOS.produtos)))}
+          </details>
+        </article>`;
+      }).join("");
+      document.getElementById("drawerList").innerHTML = html || '<p class="explore-caption">Nenhum instrumento neste recorte. Feche esta janela para ajustar os filtros.</p>';
+    }
+
+    function openExplorer(rows, title, context, mode = "operacional") {
+      drawerMode = mode;
+      fillDrawer(rows, title, context);
+      closeGeoPanel();
+      const dialog = document.getElementById("exploreDrawer");
+      if (!dialog.open) {
+        const origin = document.activeElement;
+        drawerReturnFocus = origin.closest(".chart-explore")?.querySelector("summary") || origin;
+        if (!drawerReturnFocus.matches("button, input, select, summary, a")) drawerReturnFocus = document.getElementById(mode === "historico" ? "tabBtnHistorico" : "openCurrentRows");
+        dialog.showModal();
+      }
+      dialog.scrollTop = 0;
+    }
+
+    function openCurrentExplorer() {
+      openExplorer(lastActiveRows.concat(lastConclRows), "Instrumentos do recorte", "Filtros operacionais atuais. Atenção e Crítico são subconjuntos dos Ativos.");
+    }
+
+    function selectExploration(kind, value) {
+      if (kind === "bucket" || kind === "scope") {
+        const same = exploreSelection[kind] === value;
+        exploreSelection.bucket = ""; exploreSelection.scope = "";
+        exploreSelection[kind] = same ? "" : value;
+      } else if (kind === "diretoria") exploreSelection.diretoria = exploreSelection.diretoria === value ? "" : value;
+      else if (kind === "uf") filterUFEl.value = filterUFEl.value === value ? "" : value;
+      else if (kind === "month") activeMonth = activeMonth === value ? null : value;
+      applyFilters();
+      openCurrentExplorer();
+    }
+
+    function renderComparison(resetOptions = false) {
+      const dimension = document.getElementById("compareDimension").value;
+      const a = document.getElementById("compareA"), b = document.getElementById("compareB");
+      const base = tbl.filter(r => !isArquivado(r));
+      if (resetOptions) {
+        const options = Array.from(new Set(base.map(r => comparisonValue(r,dimension)).filter(Boolean))).sort((x,y) => x.localeCompare(y,"pt-BR",{numeric:true}));
+        [a,b].forEach(el => { el.innerHTML = options.map(v => `<option value="${escapeHTML(v)}">${escapeHTML(dimension === "uf" ? v + " — " + (UF_NOMES[v] || v) : v)}</option>`).join(""); });
+        if (options.length > 1) b.selectedIndex = 1;
+      }
+      const result = document.getElementById("comparisonResult");
+      if (!a.value || !b.value || a.value === b.value) {
+        result.innerHTML = '<p class="explore-caption">Selecione dois grupos diferentes para comparar. É necessário haver pelo menos dois grupos com dados nesta dimensão.</p>';
+        return;
+      }
+      const groupA = comparisonRows(base,dimension,a.value), groupB = comparisonRows(base,dimension,b.value);
+      const sa = summarizeRows(groupA), sb = summarizeRows(groupB);
+      const metrics = [["Total","total"],["Ativos","ativos"],["Atenção · entre ativos","atencao"],["Crítico · entre ativos","critico"],["Concluídos","concluidos"],["Status SEM DATA","semData"]];
+      const largest = Math.max(sa.total,sb.total,1);
+      const missing = base.filter(r => !comparisonValue(r,dimension)).length;
+      result.innerHTML = `<div class="comparison-scroll"><table class="comparison-table"><caption class="explore-caption">${escapeHTML(document.getElementById("compareDimension").selectedOptions[0].text)} — ${escapeHTML(a.value)} × ${escapeHTML(b.value)}</caption>
+        <thead><tr><th scope="col">Indicador</th><th scope="col">A · ${escapeHTML(a.value)}<div class="comparison-meter"><span style="width:${sa.total/largest*100}%"></span></div></th><th scope="col" class="group-b">B · ${escapeHTML(b.value)}<div class="comparison-meter"><span style="width:${sb.total/largest*100}%"></span></div></th><th scope="col">Diferença (A − B)</th></tr></thead>
+        <tbody>${metrics.map(([label,key]) => `<tr><th scope="row">${label}</th><td>${sa[key]}</td><td>${sb[key]}</td><td>${sa[key]-sb[key] > 0 ? "+" : ""}${sa[key]-sb[key]}</td></tr>`).join("")}</tbody></table></div>
+        <p class="explore-caption">Atenção e Crítico fazem parte dos Ativos; SEM DATA pode se sobrepor a outras linhas. Não some todos os indicadores.${missing ? ` ${missing} instrumento(s) sem valor válido nesta dimensão não entram nos grupos.` : ""}</p>
+        <div class="explore-actions"><button class="btn" type="button" data-compare-group="A" aria-haspopup="dialog">Ver instrumentos do grupo A</button><button class="btn" type="button" data-compare-group="B" aria-haspopup="dialog">Ver instrumentos do grupo B</button></div>`;
+    }
+
+    function setupExploration(base) {
+      document.querySelectorAll("[data-kpi]").forEach(btn => btn.addEventListener("click", () => {
+        const key = btn.dataset.kpi;
+        if (key === "total") openCurrentExplorer();
+        else selectExploration(key === "ativos" || key === "concluidos" ? "scope" : "bucket",key);
+      }));
+      document.getElementById("openCurrentRows").addEventListener("click",openCurrentExplorer);
+      const dialog = document.getElementById("exploreDrawer");
+      document.getElementById("closeDrawer").addEventListener("click",() => dialog.close());
+      dialog.addEventListener("close",() => {
+        const fallback = document.getElementById(drawerMode === "historico" ? "tabBtnHistorico" : "openCurrentRows");
+        (drawerReturnFocus?.isConnected ? drawerReturnFocus : fallback).focus({preventScroll:true});
+      });
+      dialog.addEventListener("click",e => { if (e.target === dialog && e.clientX < dialog.getBoundingClientRect().left) dialog.close(); });
+      document.getElementById("drawerToTable").addEventListener("click",() => {
+        dialog.close();
+        if (!lastActiveRows.length && lastConclRows.length) detailsConclEl.open = true;
+        const target = !lastActiveRows.length && lastConclRows.length ? detailsConclEl : document.getElementById("tbl");
+        target.scrollIntoView({block:"start",behavior:"auto"});
+        target.setAttribute("tabindex","-1"); target.focus({preventScroll:true});
+        drawerReturnFocus = target;
+      });
+      [["openCommands","commandPanel"],["openComparison","comparisonPanel"]].forEach(([buttonId,panelId]) => {
+        const button = document.getElementById(buttonId), panel = document.getElementById(panelId);
+        button.addEventListener("click",() => { panel.open = !panel.open; if (panel.open) document.getElementById(panelId === "commandPanel" ? "commandInput" : "compareDimension").focus(); });
+        panel.addEventListener("toggle",() => { button.setAttribute("aria-expanded",String(panel.open)); if (panel.open && panelId === "comparisonPanel") renderComparison(); });
+      });
+      const examples = [];
+      const uf = base.map(getUF).find(Boolean);
+      if (uf) examples.push(`uf:${uf}; situação:ativos`);
+      const years = base.map(r => comparisonValue(r,"termino")).filter(Boolean).sort();
+      if (years.length) examples.push(`vencem em ${years[years.length-1]}`);
+      examples.push("situação:sem data");
+      const examplesEl = document.getElementById("commandExamples");
+      examples.forEach(value => {
+        const btn = document.createElement("button"); btn.type = "button"; btn.textContent = value;
+        btn.addEventListener("click",() => { const input = document.getElementById("commandInput"); input.value = value; input.focus(); });
+        examplesEl.appendChild(btn);
+      });
+      document.getElementById("commandForm").addEventListener("submit",e => {
+        e.preventDefault();
+        const result = resolveCommand(document.getElementById("commandInput").value,tbl);
+        const feedback = document.getElementById("commandFeedback");
+        feedback.classList.toggle("is-error",Boolean(result.error));
+        if (result.error) { feedback.textContent = result.error + " Os filtros atuais foram mantidos."; return; }
+        clearOperationalFilters();
+        const f = result.filters;
+        filterUFEl.value = f.uf || ""; filterInstEl.value = f.instituicao || ""; filterTipoEl.value = f.tipo || "";
+        selectedYears = new Set(f.inicio || []); selectedEndYears = new Set(f.termino || []);
+        exploreSelection = {scope:f.scope || "", bucket:f.bucket || "", diretoria:f.diretoria || ""};
+        updateYearMultiselectUI(); updateYearEndMultiselectUI(); applyFilters();
+        feedback.textContent = `Comando aplicado: ${lastActiveRows.length + lastConclRows.length} instrumento(s). Confira os filtros no resumo executivo.`;
+      });
+      document.getElementById("compareDimension").addEventListener("change",() => renderComparison(true));
+      ["compareA","compareB"].forEach(id => document.getElementById(id).addEventListener("change",() => renderComparison()));
+      document.getElementById("comparisonResult").addEventListener("click",e => {
+        const btn = e.target.closest("[data-compare-group]"); if (!btn) return;
+        const dimensionEl = document.getElementById("compareDimension");
+        const value = document.getElementById("compare" + btn.dataset.compareGroup).value;
+        openExplorer(comparisonRows(tbl,dimensionEl.value,value),"Grupo " + btn.dataset.compareGroup + " · " + value,dimensionEl.selectedOptions[0].text + ". Base completa, independente dos filtros operacionais.","comparacao");
+      });
+      renderComparison(true);
+    }
+
+    // Renderizações serializadas: mudanças rápidas nunca deixam um gráfico de um recorte antigo.
+    function queueOperationalCharts(rows) {
+      chartPendingRows = rows.slice();
+      document.getElementById("operationalCharts").setAttribute("aria-busy","true");
+      document.getElementById("chartScope").textContent = "Atualizando gráficos para os filtros selecionados…";
+      clearTimeout(chartTimer);
+      chartTimer = setTimeout(flushOperationalCharts,120);
+    }
+
+    async function flushOperationalCharts() {
+      if (chartRendering) return;
+      chartRendering = true;
+      try {
+        while (chartPendingRows) {
+          const rows = chartPendingRows; chartPendingRows = null;
+          await Promise.all([buildStatusDonut(rows),buildVencBar(rows),buildDiretoriaBar(rows),buildBrazilMap(rows)]);
+        }
+        document.getElementById("chartScope").textContent = "Gráficos, cards e tabelas mostram o mesmo recorte. Clique para filtrar e ver os instrumentos; clique novamente ou remova a seleção no resumo para desfazer. O cronograma inclui somente ativos.";
+      } catch (err) {
+        console.error("[GRÁFICOS]",err);
+        document.getElementById("chartScope").textContent = "Não foi possível atualizar todos os gráficos. Os dados permanecem disponíveis nos cards e nas tabelas. Recarregue a página para tentar novamente.";
+      } finally {
+        chartRendering = false;
+        document.getElementById("operationalCharts").setAttribute("aria-busy","false");
+        if (chartPendingRows) queueOperationalCharts(chartPendingRows);
+      }
+    }
+
+    function bindChartExplore(chartId, kind, options, selected, pointValue, onSelect) {
+      const chart = document.getElementById(chartId);
+      const choose = onSelect || (value => selectExploration(kind,value));
+      chart.removeAllListeners("plotly_click");
+      chart.on("plotly_click",data => {
+        const point = data?.points?.[0]; if (!point) return;
+        const value = pointValue(point);
+        if (options.some(o => o.value === value)) choose(value);
+      });
+      let chooser = document.getElementById(chartId + "_choices");
+      if (!chooser) {
+        chooser = document.createElement("details"); chooser.className = "chart-explore"; chooser.id = chartId + "_choices";
+        chooser.innerHTML = '<summary>Explorar categorias por lista</summary><div class="chart-explore-options"></div>';
+        chart.after(chooser);
+      }
+      const list = chooser.querySelector("div"); list.replaceChildren();
+      options.forEach(option => {
+        const btn = document.createElement("button"); btn.type = "button"; btn.className = "filter-chip";
+        btn.textContent = option.label; btn.setAttribute("aria-pressed",String(selected === option.value));
+        btn.addEventListener("click",() => choose(option.value)); list.appendChild(btn);
+      });
+      if (!options.length) list.textContent = "Sem categorias neste recorte.";
     }
 
     // =========================
     // Listeners
     // =========================
-    resetBtnEl.addEventListener("click", () => {
+    function clearOperationalFilters() {
       activeMonth = null;
+      exploreSelection = {scope:"", bucket:"", diretoria:""};
 
       quickSearchEl.value = "";
       selectedYears.clear();
@@ -2371,7 +2895,10 @@
       filterStatusEl.value = "";
       filterInstEl.value = "";
       filterUFEl.value = "";
-
+      document.getElementById("commandFeedback").textContent = "";
+    }
+    resetBtnEl.addEventListener("click", () => {
+      clearOperationalFilters();
       applyFilters();
     });
 
@@ -2730,10 +3257,7 @@
       const baseCharts = tbl.filter(r => computeStatus(r) !== "ARQUIVADO");
       populateFilterOptions(baseCharts);
 
-      buildStatusDonut(baseCharts);
-      buildVencBar(baseCharts);
-      buildBrazilMap(baseCharts);
-      buildDiretoriaBar(baseCharts);
+      setupExploration(baseCharts);
 
       // Data de referência: todo o cálculo de situação (VIGENTE/CRÍTICO/VENCIDO)
       // é relativo a "hoje" (momento em que a página é aberta). Exibir essa data
