@@ -832,6 +832,7 @@
     .explore-caption { color:#64748b; font-size:12px; line-height:1.5; margin:8px 0; }
     .explore-tools { margin:0 0 16px; padding:12px 16px; border:1px solid var(--border-subtle); border-radius:12px; background:#fff; }
     .explore-tools > summary { font-size:13px; color:#1e3a5f; padding:4px 0; }
+    .search-label { display:block; font-size:13px; color:#1e3a5f; font-weight:600; margin-bottom:2px; }
     .command-form { display:flex; gap:8px; margin-top:12px; }
     .command-form input { flex:1; min-width:0; }
     .command-examples { display:flex; flex-wrap:wrap; gap:6px; margin:10px 0; }
@@ -997,10 +998,6 @@
 
   <div class="layout" id="viewOperacional">
     <aside class="sidebar">
-      <div class="field">
-        <input id="quickSearch" class="select" type="search" role="searchbox" aria-label="Pesquisar instrumentos por identificação, instituição, diretoria ou processo" placeholder="Pesquisar instrumento, instituição, diretoria ou processo..." />
-      </div>
-
       <h4>Filtros<span id="filterCount" style="font-size:12px; font-weight:400; color:#666;"></span></h4>
 
       <div class="field">
@@ -1098,32 +1095,27 @@
           <h3 id="executiveTitle">Resumo executivo</h3>
           <div class="explore-actions">
             <button class="btn" type="button" id="openCurrentRows" aria-haspopup="dialog">Ver instrumentos</button>
-            <button class="btn" type="button" id="openCommands" aria-controls="commandPanel" aria-expanded="false">Pesquisar por comandos</button>
-            <button class="btn" type="button" id="openComparison" aria-controls="comparisonPanel" aria-expanded="false">Comparar</button>
           </div>
         </div>
         <p id="executiveSummary" aria-live="polite">Carregando instrumentos…</p>
         <div id="exploreSelections" class="explore-selections" aria-label="Filtros aplicados; selecione para remover"></div>
       </section>
 
-      <details class="explore-tools" id="commandPanel">
-        <summary>Pesquisa por comandos</summary>
-        <p class="explore-caption" id="commandHelp">Use os exemplos ou combine campos com ponto e vírgula. Ao aplicar, o comando substitui os filtros atuais. A pesquisa livre permanece disponível na lateral.</p>
-        <form id="commandForm" class="command-form">
-          <input id="commandInput" class="select" type="text" aria-label="Comando de pesquisa" aria-describedby="commandHelp commandFeedback" placeholder="Ex.: uf:AM; situação:ativos" autocomplete="off" maxlength="600" />
-          <button class="btn" type="submit">Aplicar comando</button>
-        </form>
-        <div class="command-examples" id="commandExamples"></div>
-        <p class="explore-caption">Campos: <strong>uf, instituição, diretoria, tipo, início, encerramento, situação</strong>. Anos múltiplos: início:2023,2024. Situações: ativos, concluídos, vigente, atenção, crítico e sem data.</p>
-        <div id="commandFeedback" role="status" aria-live="polite"></div>
-      </details>
+      <div class="explore-tools" id="searchBar">
+        <label class="search-label" for="quickSearch">Digite uma palavra para buscar…</label>
+        <div class="command-form">
+          <input id="quickSearch" class="select" type="search" role="searchbox" aria-label="Pesquisar instrumentos por identificação, instituição, diretoria ou processo" placeholder="Pesquisar instrumento, instituição, diretoria ou processo…" />
+          <button class="btn" type="button" id="searchBtn" aria-label="Pesquisar" title="Pesquisar">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:5px;"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>Pesquisar
+          </button>
+        </div>
+      </div>
 
-      <details class="explore-tools" id="comparisonPanel">
+      <details class="explore-tools" id="comparisonPanel" style="display:none;">
         <summary>Comparação de instrumentos</summary>
         <p class="explore-caption">Base completa, sem arquivados. Esta comparação é independente dos filtros operacionais. Os status são calculados na data de hoje, inclusive ao comparar anos anteriores.</p>
         <div class="comparison-controls">
           <label>Comparar por<select id="compareDimension" class="select">
-            <option value="uf">UF</option><option value="instituicao">Instituição parceira</option><option value="diretoria">Diretoria</option>
             <option value="inicio">Ano de início da vigência</option><option value="termino">Ano de encerramento</option>
           </select></label>
           <label>Grupo A<select id="compareA" class="select"></select></label>
@@ -2784,37 +2776,8 @@
         target.setAttribute("tabindex","-1"); target.focus({preventScroll:true});
         drawerReturnFocus = target;
       });
-      [["openCommands","commandPanel"],["openComparison","comparisonPanel"]].forEach(([buttonId,panelId]) => {
-        const button = document.getElementById(buttonId), panel = document.getElementById(panelId);
-        button.addEventListener("click",() => { panel.open = !panel.open; if (panel.open) document.getElementById(panelId === "commandPanel" ? "commandInput" : "compareDimension").focus(); });
-        panel.addEventListener("toggle",() => { button.setAttribute("aria-expanded",String(panel.open)); if (panel.open && panelId === "comparisonPanel") renderComparison(); });
-      });
-      const examples = [];
-      const uf = base.map(getUF).find(Boolean);
-      if (uf) examples.push(`uf:${uf}; situação:ativos`);
-      const years = base.map(r => comparisonValue(r,"termino")).filter(Boolean).sort();
-      if (years.length) examples.push(`vencem em ${years[years.length-1]}`);
-      examples.push("situação:sem data");
-      const examplesEl = document.getElementById("commandExamples");
-      examples.forEach(value => {
-        const btn = document.createElement("button"); btn.type = "button"; btn.textContent = value;
-        btn.addEventListener("click",() => { const input = document.getElementById("commandInput"); input.value = value; input.focus(); });
-        examplesEl.appendChild(btn);
-      });
-      document.getElementById("commandForm").addEventListener("submit",e => {
-        e.preventDefault();
-        const result = resolveCommand(document.getElementById("commandInput").value,tbl);
-        const feedback = document.getElementById("commandFeedback");
-        feedback.classList.toggle("is-error",Boolean(result.error));
-        if (result.error) { feedback.textContent = result.error + " Os filtros atuais foram mantidos."; return; }
-        clearOperationalFilters();
-        const f = result.filters;
-        filterUFEl.value = f.uf || ""; filterInstEl.value = f.instituicao || ""; filterTipoEl.value = f.tipo || "";
-        selectedYears = new Set(f.inicio || []); selectedEndYears = new Set(f.termino || []);
-        exploreSelection = {scope:f.scope || "", bucket:f.bucket || "", diretoria:f.diretoria || ""};
-        updateYearMultiselectUI(); updateYearEndMultiselectUI(); applyFilters();
-        feedback.textContent = `Comando aplicado: ${lastActiveRows.length + lastConclRows.length} instrumento(s). Confira os filtros no resumo executivo.`;
-      });
+      // Pesquisa por comandos removida (2026-09-11): substituída pela busca simples por palavra (#quickSearch), reposicionada na área principal (barra #searchBar).
+      // Comparação ocultada (item 1) — o painel permanece no DOM com display:none e seus listeners abaixo seguem inertes; resolveCommand()/commandNorm() ficam como código morto, sem chamada.
       document.getElementById("compareDimension").addEventListener("change",() => renderComparison(true));
       ["compareA","compareB"].forEach(id => document.getElementById(id).addEventListener("change",() => renderComparison()));
       document.getElementById("comparisonResult").addEventListener("click",e => {
@@ -2894,7 +2857,6 @@
       filterStatusEl.value = "";
       filterInstEl.value = "";
       filterUFEl.value = "";
-      document.getElementById("commandFeedback").textContent = "";
     }
     resetBtnEl.addEventListener("click", () => {
       clearOperationalFilters();
@@ -3031,6 +2993,8 @@
     })();
 
     quickSearchEl.addEventListener("input", applyFilters);
+    document.getElementById("searchBtn").addEventListener("click", () => { applyFilters(); quickSearchEl.focus(); });
+    quickSearchEl.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); applyFilters(); } });
     filterTipoEl.addEventListener("change", applyFilters);
     filterStatusEl.addEventListener("change", applyFilters);
     filterInstEl.addEventListener("change", applyFilters);
