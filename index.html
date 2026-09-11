@@ -829,6 +829,17 @@
     .explore-actions { display:flex; flex-wrap:wrap; gap:8px; }
     .explore-actions .btn, .command-form .btn { font-size:12px; padding:8px 12px; }
     .explore-summary p { margin:10px 0 0; font-size:13px; line-height:1.65; color:#475569; }
+    /* Mini-ficha do instrumento (recorte de 1 item) — camada de exploração, só apresentação. */
+    .executive-detail { margin:12px 0 0; }
+    .executive-detail .ficha-head { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin:0 0 8px; }
+    .executive-detail .ficha-id { font-size:15px; font-weight:700; color:#1e3a5f; }
+    .executive-detail .ficha-status { font-size:12px; font-weight:600; color:#475569; }
+    .executive-detail dl { display:grid; grid-template-columns:max-content 1fr; gap:4px 16px; margin:0; font-size:13px; line-height:1.55; }
+    .executive-detail dt { color:#64748b; font-weight:600; }
+    .executive-detail dd { margin:0; color:#334155; }
+    .executive-detail .ficha-obj { margin-top:10px; }
+    .executive-detail .ficha-obj strong { display:block; font-size:12px; color:#64748b; margin-bottom:2px; }
+    .executive-detail .ficha-obj ul { margin:0; padding-left:18px; font-size:13px; color:#475569; line-height:1.55; }
     .explore-caption { color:#64748b; font-size:12px; line-height:1.5; margin:8px 0; }
     .explore-tools { margin:0 0 16px; padding:12px 16px; border:1px solid var(--border-subtle); border-radius:12px; background:#fff; }
     .explore-tools > summary { font-size:13px; color:#1e3a5f; padding:4px 0; }
@@ -1090,14 +1101,15 @@
         </button>
       </div>
 
-      <section class="explore-summary" aria-labelledby="executiveTitle">
+      <section class="explore-summary" id="exploreSummarySection" aria-labelledby="executiveTitle" hidden>
         <div class="explore-heading">
-          <h3 id="executiveTitle">Resumo executivo</h3>
+          <h3 id="executiveTitle">Resumo do recorte</h3>
           <div class="explore-actions">
             <button class="btn" type="button" id="openCurrentRows" aria-haspopup="dialog">Ver instrumentos</button>
           </div>
         </div>
         <p id="executiveSummary" aria-live="polite">Carregando instrumentos…</p>
+        <div id="executiveDetail" class="executive-detail" hidden></div>
         <div id="exploreSelections" class="explore-selections" aria-label="Filtros aplicados; selecione para remover"></div>
       </section>
 
@@ -2640,14 +2652,55 @@
     // =========================
     function updateExplorationUI(rows, filtered) {
       const stats = summarizeRows(rows);
+      const section = document.getElementById("exploreSummarySection");
+      const title   = document.getElementById("executiveTitle");
       const summary = document.getElementById("executiveSummary");
-      let text = stats.total
-        ? `${filtered ? "No recorte atual" : "Na base completa"}: ${stats.total} instrumento(s), ${stats.ativos} ativo(s) e ${stats.concluidos} concluído(s). Entre os ativos, ${stats.atencao} em atenção e ${stats.critico} em situação crítica. ${stats.semData} com status SEM DATA.`
-        : "Nenhum instrumento corresponde aos filtros atuais. Remova uma seleção abaixo ou use Limpar filtros.";
-      if (stats.proximo) text += ` Próximo vencimento entre os ativos: ${formatDateBR(getFirst(stats.proximo,CAMPOS.termino))} — ${getFirst(stats.proximo,CAMPOS.idDisplay) || "sem identificação"} (${getFirst(stats.proximo,CAMPOS.instituicao) || "instituição não registrada"}).`;
-      else if (stats.ativos) text += " Nenhum ativo do recorte tem data de vencimento registrada.";
-      summary.textContent = text;
-      const chips = document.getElementById("exploreSelections");
+      const detail  = document.getElementById("executiveDetail");
+      const chips   = document.getElementById("exploreSelections");
+      const baseRows = rows.filter(r => !isArquivado(r));
+
+      // Estado 1 — sem recorte ativo: ocultar o bloco (seria apenas eco dos cards).
+      if (!filtered) {
+        section.hidden = true;
+        chips.replaceChildren();
+        document.querySelectorAll("[data-kpi]").forEach(btn => btn.setAttribute("aria-pressed", "false"));
+        return;
+      }
+      section.hidden = false;
+
+      if (baseRows.length === 1) {
+        // Estado 3 — recorte de 1 item: mini-ficha do instrumento (informação nova, não redundante).
+        const r = baseRows[0];
+        title.textContent = "Instrumento encontrado";
+        summary.hidden = true;
+        detail.hidden = false;
+        const dirGer = [getFirst(r,CAMPOS.diretoria), getFirst(r,CAMPOS.gerencia)].filter(Boolean).join(" · ") || "—";
+        detail.innerHTML =
+          `<div class="ficha-head"><span class="ficha-id">${escapeHTML(getFirst(r,CAMPOS.idDisplay) || "Sem identificação")}</span><span class="ficha-status">${escapeHTML(statusBucket(r))}</span></div>`
+          + `<dl><dt>Tipo</dt><dd>${escapeHTML(getFirst(r,CAMPOS.tipo) || "—")}</dd>`
+          + `<dt>Instituição</dt><dd>${escapeHTML(getFirst(r,CAMPOS.instituicao) || "—")}</dd>`
+          + `<dt>Diretoria</dt><dd>${escapeHTML(dirGer)}</dd>`
+          + `<dt>UF</dt><dd>${escapeHTML(getUF(r) || "—")}</dd>`
+          + `<dt>Vigência</dt><dd>${escapeHTML(formatDateBR(getFirst(r,CAMPOS.inicio)) || "—")} → ${escapeHTML(formatDateBR(getFirst(r,CAMPOS.termino)) || "Sem data")}</dd>`
+          + `<dt>Processo</dt><dd>${escapeHTML(getFirst(r,CAMPOS.processo) || "—")}</dd></dl>`
+          + `<div class="ficha-obj"><strong>Objetivo</strong>${makeUl(splitBullets(getFirst(r,CAMPOS.objetivo)))}</div>`;
+      } else if (baseRows.length === 0) {
+        title.textContent = "Resumo do recorte";
+        detail.hidden = true;
+        summary.hidden = false;
+        summary.textContent = "Nenhum instrumento corresponde aos filtros atuais. Remova uma seleção abaixo ou use Limpar filtros.";
+      } else {
+        // Estado 2 — vários itens: resumo enxuto, só o que os cards não mostram (SEM DATA + próximo vencimento).
+        title.textContent = "Resumo do recorte";
+        detail.hidden = true;
+        summary.hidden = false;
+        let text = `${stats.total} instrumento(s) no recorte`;
+        if (stats.semData) text += `, ${stats.semData} com status SEM DATA`;
+        text += ".";
+        if (stats.proximo) text += ` Próximo vencimento entre os ativos: ${formatDateBR(getFirst(stats.proximo,CAMPOS.termino))} — ${getFirst(stats.proximo,CAMPOS.idDisplay) || "sem identificação"} (${getFirst(stats.proximo,CAMPOS.instituicao) || "instituição não registrada"}).`;
+        else if (stats.ativos) text += " Nenhum ativo do recorte tem data de vencimento registrada.";
+        summary.textContent = text;
+      }
       chips.replaceChildren();
       const addChip = (label, remove) => {
         const btn = document.createElement("button");
