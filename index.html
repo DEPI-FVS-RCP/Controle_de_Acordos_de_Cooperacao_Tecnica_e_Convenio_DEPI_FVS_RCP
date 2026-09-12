@@ -292,6 +292,36 @@
       color: #666;
       margin: 0 0 6px 2px;
     }
+    /* Filtros recolhíveis (auxiliares; a busca frontal é o filtro principal) */
+    .filters-collapse { margin-bottom: 14px; }
+    .filters-collapse > summary {
+      list-style: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      background: #f8fafc;
+      user-select: none;
+      transition: background .15s ease;
+    }
+    .filters-collapse > summary::-webkit-details-marker { display: none; }
+    .filters-collapse > summary:hover { background: #eef2f7; }
+    .filters-summary-label { font-weight: 700; font-size: 14px; color: #1e3a5f; }
+    .filters-summary-hint { margin-left: auto; font-size: 12px; color: #94a3b8; }
+    .filters-collapse[open] .filters-summary-hint { display: none; }
+    .filters-collapse > summary::after {
+      content: "\25B8";
+      margin-left: auto;
+      font-size: 12px;
+      color: #64748b;
+      transition: transform .15s ease;
+    }
+    .filters-collapse:not([open]) > summary::after { margin-left: 4px; }
+    .filters-collapse[open] > summary::after { transform: rotate(90deg); }
+    .filters-body { margin-top: 12px; }
     .badge-semdata {
       display: inline-block;
       background: #f1f5f9;
@@ -1016,50 +1046,57 @@
 
   <div class="layout" id="viewOperacional">
     <aside class="sidebar">
-      <h4>Filtros<span id="filterCount" style="font-size:12px; font-weight:400; color:#666;"></span></h4>
+      <details class="filters-collapse" id="filtersCollapse">
+        <summary class="filters-summary" aria-label="Abrir ou fechar filtros avançados">
+          <span class="filters-summary-label">Filtros<span id="filterCount" style="font-size:12px; font-weight:400; color:#666;"></span></span>
+          <span class="filters-summary-hint">clique para abrir</span>
+        </summary>
 
-      <div class="field">
-        <div class="label">Ano de início da vigência</div>
-        <div class="filterHint" style="margin-bottom:6px;">É possível selecionar um ou mais anos.</div>
-        <div class="multiselect" id="yearMultiselect">
-          <button type="button" id="yearMultiselectBtn" class="select multiselect-btn" aria-haspopup="listbox" aria-expanded="false" aria-label="Filtrar por ano de início da vigência">Todos</button>
-          <div id="yearMultiselectPanel" class="multiselect-panel" role="listbox" aria-multiselectable="true" aria-label="Anos de início da vigência" hidden></div>
+        <div class="filters-body">
+          <div class="field">
+            <div class="label">Ano de início da vigência</div>
+            <div class="filterHint" style="margin-bottom:6px;">É possível selecionar um ou mais anos.</div>
+            <div class="multiselect" id="yearMultiselect">
+              <button type="button" id="yearMultiselectBtn" class="select multiselect-btn" aria-haspopup="listbox" aria-expanded="false" aria-label="Filtrar por ano de início da vigência">Todos</button>
+              <div id="yearMultiselectPanel" class="multiselect-panel" role="listbox" aria-multiselectable="true" aria-label="Anos de início da vigência" hidden></div>
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="label">Ano de encerramento</div>
+            <div class="filterHint" style="margin-bottom:6px;">É possível selecionar um ou mais anos.</div>
+            <div class="multiselect" id="yearEndMultiselect">
+              <button type="button" id="yearEndMultiselectBtn" class="select multiselect-btn" aria-haspopup="listbox" aria-expanded="false" aria-label="Filtrar por ano de encerramento">Todos</button>
+              <div id="yearEndMultiselectPanel" class="multiselect-panel" role="listbox" aria-multiselectable="true" aria-label="Anos de encerramento" hidden></div>
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="label">Tipo de instrumento</div>
+            <select id="filterTipo" class="select" aria-label="Filtrar por tipo de instrumento">
+              <option value="">Todos</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <div class="label">Instituição Parceira</div>
+            <select id="filterInst" class="select" aria-label="Filtrar por instituição parceira">
+              <option value="">Todas</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <div class="label">UF</div>
+            <select id="filterUF" class="select" aria-label="Filtrar por unidade federativa (UF)">
+              <option value="">Todas</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <button id="resetFilters" class="btn" style="width:100%;">Limpar filtros</button>
+          </div>
         </div>
-      </div>
-
-      <div class="field">
-        <div class="label">Ano de encerramento</div>
-        <div class="filterHint" style="margin-bottom:6px;">É possível selecionar um ou mais anos.</div>
-        <div class="multiselect" id="yearEndMultiselect">
-          <button type="button" id="yearEndMultiselectBtn" class="select multiselect-btn" aria-haspopup="listbox" aria-expanded="false" aria-label="Filtrar por ano de encerramento">Todos</button>
-          <div id="yearEndMultiselectPanel" class="multiselect-panel" role="listbox" aria-multiselectable="true" aria-label="Anos de encerramento" hidden></div>
-        </div>
-      </div>
-
-      <div class="field">
-        <div class="label">Tipo de instrumento</div>
-        <select id="filterTipo" class="select" aria-label="Filtrar por tipo de instrumento">
-          <option value="">Todos</option>
-        </select>
-      </div>
-
-      <div class="field">
-        <div class="label">Instituição Parceira</div>
-        <select id="filterInst" class="select" aria-label="Filtrar por instituição parceira">
-          <option value="">Todas</option>
-        </select>
-      </div>
-
-      <div class="field">
-        <div class="label">UF</div>
-        <select id="filterUF" class="select" aria-label="Filtrar por unidade federativa (UF)">
-          <option value="">Todas</option>
-        </select>
-      </div>
-
-      <div class="field">
-        <button id="resetFilters" class="btn" style="width:100%;">Limpar filtros</button>
-      </div>
+      </details>
 
       <div class="field">
         <button id="btnConcluidos" class="btn" style="width:100%;">Instrumentos Concluídos</button>
@@ -1433,6 +1470,7 @@
       gerencia: ["gerencia_responsavel","Gerência","gerencia"],
       possuiAditivo: ["possui_aditivo","aditivo","Aditivo"],
       qtdAditivos: ["quantos_aditivos","Qtd Aditivos","qtd_aditivos"],
+      aditivosDetalhe: ["aditivos_detalhe","detalhe_aditivos","aditivos"],
       uf: ["uf","UF","estado_uf","uf_parceiro"],
       estado: ["estado","Estado"],
       arquivado: ["arquivado","Arquivado","status_geral","Status Geral","status"],
@@ -1871,6 +1909,11 @@
         const objetivoItens = splitBullets(objetivoTexto);
         const produtosItens = splitBullets(produtosTexto);
 
+        // Aditivos: detalhe cadastrado em coluna própria (aditivos_detalhe), 1 por " | ".
+        // Nunca usar ";" no valor (é delimitador do CSV e separador de bullet).
+        const temAditivo    = ["SIM","S","TRUE","1"].includes(possuiAditivo);
+        const aditivosItens = splitBullets(getFirst(r, CAMPOS.aditivosDetalhe));
+
         const tr = document.createElement("tr");
         tr.innerHTML = `
           <td>${escapeHTML(ident || "—")}</td>
@@ -1904,6 +1947,12 @@
                 <div class="k">Publicação DOE:</div><div class="v">${escapeHTML(dtDoe || "—")}</div>
                 ${linkDoe ? `<div class="k">Link DOE:</div><div class="v"><a href="${escapeHTML(linkDoe)}" target="_blank" rel="noopener noreferrer">Abrir</a></div>` : ""}
               </div>
+
+              ${(temAditivo || aditivosItens.length) ? `
+              <details>
+                <summary>Aditivos${qtdAditivos ? ` (${escapeHTML(qtdAditivos)})` : ""} <span class="summary-hint">(clique para ver)</span></summary>
+                ${aditivosItens.length ? makeUl(aditivosItens) : `<div class="muted">Aditivo registrado; detalhe ainda não cadastrado.</div>`}
+              </details>` : ""}
 
               <details ${objetivoItens.length ? "open" : ""}>
                 <summary>Objetivo</summary>
