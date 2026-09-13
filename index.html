@@ -596,20 +596,44 @@
       position: fixed;
       inset: 0;
       z-index: 9999;
-      background: linear-gradient(135deg, #f0f4f8 0%, #e8eef5 100%);
+      background: #ffffff;
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 20px;
       box-sizing: border-box;
+      overflow: hidden;
+    }
+    /* Hero institucional: foto da sede FVS ao fundo, com tom suave/apagado */
+    #password-overlay::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: url("./assets/login-hero.webp") center 28% / cover no-repeat;
+      filter: blur(1.5px) saturate(0.58) brightness(1.17);
+      transform: scale(1.06);
+      z-index: 0;
+    }
+    /* Véu que apaga a foto no topo e corte SECO para branco sólido (sem fade) por volta da metade */
+    #password-overlay::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom,
+        rgba(255,255,255,0.64) 0%,
+        rgba(255,255,255,0.64) 58%,
+        #ffffff 58%);
+      z-index: 1;
     }
     #password-overlay.hidden { display: none; }
     .pw-box {
+      position: relative;
+      z-index: 2;
       background: #fff;
       border: 1px solid #e2e8f0;
       border-radius: 16px;
       padding: 36px 40px 32px;
-      box-shadow: 0 6px 24px rgba(0,0,0,0.08);
+      box-shadow: 0 10px 34px rgba(15,46,32,0.16);
       display: flex;
       flex-direction: column;
       align-items: center;
