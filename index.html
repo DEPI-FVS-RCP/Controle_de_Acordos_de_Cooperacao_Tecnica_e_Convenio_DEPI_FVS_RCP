@@ -176,6 +176,8 @@
     .card.kpi-red   .value { color: #d62c26; }
     .card.kpi-blue  .value { color: #1e3a5f; }
     .card.kpi-slate .value { color: #475569; }
+    .card.kpi-teal  { border-top: 4px solid #0f766e; }
+    .card.kpi-teal  .value { color: #0f766e; }
 
     .multiselect{ position: relative; }
     .multiselect-btn{
@@ -1156,6 +1158,11 @@
           <div class="value" id="kpi_concluidos">—</div>
           <span class="card-action">Clique para explorar concluídos →</span>
         </button>
+        <button type="button" class="card kpi-teal" data-kpi="aditivos" aria-pressed="false" aria-haspopup="dialog">
+          <div class="kpiLabel">Com aditivo</div>
+          <div class="value" id="kpi_aditivos">—</div>
+          <span class="card-action">Clique para explorar aditivos →</span>
+        </button>
       </div>
 
       <section class="explore-summary" id="exploreSummarySection" aria-labelledby="executiveTitle" hidden>
@@ -1667,6 +1674,7 @@
         if (selection.scope === "concluidos" && !isConcluido(r)) return false;
         if (selection.bucket && statusBucket(r) !== selection.bucket) return false;
         if (selection.diretoria && String(getFirst(r, CAMPOS.diretoria)).trim() !== selection.diretoria) return false;
+        if (selection.aditivos && !["SIM","S","TRUE","1"].includes(String(getFirst(r, CAMPOS.possuiAditivo) || "").trim().toUpperCase())) return false;
         return true;
       });
     }
@@ -1763,7 +1771,7 @@
     let selectedEndYears = new Set();
     let lastActiveRows = [];
     let lastConclRows  = [];
-    let exploreSelection = {scope:"", bucket:"", diretoria:""};
+    let exploreSelection = {scope:"", bucket:"", diretoria:"", aditivos:false};
     let drawerMode = "operacional";
     let drawerReturnFocus = null;
     let chartPendingRows = null;
@@ -2017,11 +2025,16 @@
         if (st === "CRÍTICO 60 DIAS") crit++;
       });
 
+      const comAditivo = base.concat(concl).filter(r =>
+        ["SIM","S","TRUE","1"].includes(String(getFirst(r, CAMPOS.possuiAditivo) || "").trim().toUpperCase())
+      ).length;
+
       kpi_total.textContent = String(base.length + concl.length);
       kpi_vigentes.textContent = String(base.length);
       kpi_alerta.textContent = String(alt);
       kpi_critico.textContent = String(crit);
       kpi_concluidos.textContent = String(concl.length);
+      kpi_aditivos.textContent = String(comAditivo);
     }
 
     // =========================
@@ -2684,13 +2697,13 @@
       render(conclRows,  tbodyConclEl);
       updateKPIs(activeRows, conclRows);
 
-      const anyFilter = Boolean(activeMonth || qq || selectedYears.size > 0 || selectedEndYears.size > 0 || tipo || instSel || ufSel || exploreSelection.scope || exploreSelection.bucket || exploreSelection.diretoria);
+      const anyFilter = Boolean(activeMonth || qq || selectedYears.size > 0 || selectedEndYears.size > 0 || tipo || instSel || ufSel || exploreSelection.scope || exploreSelection.bucket || exploreSelection.diretoria || exploreSelection.aditivos);
 
       activeCountLabelEl.textContent = anyFilter
         ? `Exibindo ${activeRows.length} de ${activeBase.length} instrumentos`
         : `Exibindo todos os ${activeBase.length} instrumentos`;
 
-      const filterCount = [activeMonth, qq, selectedYears.size > 0, selectedEndYears.size > 0, tipo, instSel, ufSel, exploreSelection.scope, exploreSelection.bucket, exploreSelection.diretoria].filter(Boolean).length;
+      const filterCount = [activeMonth, qq, selectedYears.size > 0, selectedEndYears.size > 0, tipo, instSel, ufSel, exploreSelection.scope, exploreSelection.bucket, exploreSelection.diretoria, exploreSelection.aditivos].filter(Boolean).length;
       filterCountEl.textContent = filterCount > 0 ? ` • ${filterCount} ativo${filterCount === 1 ? "" : "s"}` : "";
 
       if (anyFilter) {
@@ -2712,6 +2725,7 @@
       if (exploreSelection.scope) hints.push(`situação: ${exploreSelection.scope === "ativos" ? "ativos" : "concluídos"}`);
       if (exploreSelection.bucket) hints.push(`situação do gráfico: ${exploreSelection.bucket}`);
       if (exploreSelection.diretoria) hints.push(`diretoria: ${exploreSelection.diretoria}`);
+      if (exploreSelection.aditivos) hints.push(`com aditivo`);
       hintEl.textContent = hints.length
         ? `Filtro ativo → ${hints.join(" • ")}. Remova seleções no resumo executivo ou use Limpar filtros.`
         : "";
@@ -2791,9 +2805,13 @@
       if (exploreSelection.scope) addChip(exploreSelection.scope === "ativos" ? "Somente ativos" : "Somente concluídos", () => { exploreSelection.scope = ""; });
       if (exploreSelection.bucket) addChip("Situação: " + exploreSelection.bucket, () => { exploreSelection.bucket = ""; });
       if (exploreSelection.diretoria) addChip("Diretoria: " + exploreSelection.diretoria, () => { exploreSelection.diretoria = ""; });
+      if (exploreSelection.aditivos) addChip("Com aditivo", () => { exploreSelection.aditivos = false; });
       document.querySelectorAll("[data-kpi]").forEach(btn => {
         const key = btn.dataset.kpi;
-        btn.setAttribute("aria-pressed", String(key !== "total" && (exploreSelection.scope === key || exploreSelection.bucket === key)));
+        btn.setAttribute("aria-pressed", String(
+          (key === "aditivos" && exploreSelection.aditivos) ||
+          (key !== "total" && key !== "aditivos" && (exploreSelection.scope === key || exploreSelection.bucket === key))
+        ));
       });
       if (document.getElementById("exploreDrawer").open && drawerMode === "operacional") fillDrawer(rows, "Instrumentos do recorte", "Filtros operacionais atuais. Atenção e Crítico são subconjuntos dos Ativos.");
     }
@@ -2847,6 +2865,7 @@
         exploreSelection.bucket = ""; exploreSelection.scope = "";
         exploreSelection[kind] = same ? "" : value;
       } else if (kind === "diretoria") exploreSelection.diretoria = exploreSelection.diretoria === value ? "" : value;
+      else if (kind === "aditivos") exploreSelection.aditivos = !exploreSelection.aditivos;
       else if (kind === "uf") filterUFEl.value = filterUFEl.value === value ? "" : value;
       else if (kind === "month") activeMonth = activeMonth === value ? null : value;
       applyFilters();
@@ -2883,6 +2902,7 @@
       document.querySelectorAll("[data-kpi]").forEach(btn => btn.addEventListener("click", () => {
         const key = btn.dataset.kpi;
         if (key === "total") openCurrentExplorer();
+        else if (key === "aditivos") selectExploration("aditivos", key);
         else selectExploration(key === "ativos" || key === "concluidos" ? "scope" : "bucket",key);
       }));
       document.getElementById("openCurrentRows").addEventListener("click",openCurrentExplorer);
@@ -2971,7 +2991,7 @@
     // =========================
     function clearOperationalFilters() {
       activeMonth = null;
-      exploreSelection = {scope:"", bucket:"", diretoria:""};
+      exploreSelection = {scope:"", bucket:"", diretoria:"", aditivos:false};
 
       quickSearchEl.value = "";
       toggleClearSearch();
