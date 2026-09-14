@@ -1296,7 +1296,7 @@
                   <th>Gerência</th>
                   <th>Status</th>
                   <th>Início</th>
-                  <th>Vencimento</th>
+                  <th>Vencimento<br>atual</th>
                   <th>Aditivos</th>
                   <th>Processo</th>
                   <th>Detalhes</th>
@@ -1325,7 +1325,7 @@
                     <th>Gerência</th>
                     <th>Status</th>
                     <th>Início</th>
-                    <th>Vencimento</th>
+                    <th>Vencimento<br>atual</th>
                     <th>Aditivos</th>
                     <th>Processo</th>
                     <th>Detalhes</th>
@@ -1473,6 +1473,7 @@
     // AJUSTE AQUI
     // =========================
     const CSV_URL = "./data/tbl_instrumentos.csv";
+    const ADITIVOS_CSV_URL = "./data/tbl_aditivos.csv";
 
     // =========================
     // Limiares de prazo (fonte única — painel)
@@ -1491,10 +1492,12 @@
     // =========================
     const CAMPOS = {
       termino: ["vigencia_termino","VIGÊNCIA - TÉRMINO","vencimento","Vencimento","vigencia_fim"],
+      terminoOriginal: ["vigencia_termino_original"],
       inicio: ["vigencia_inicio","VIGÊNCIA - INÍCIO","inicio","Inicio"],
       instituicao: ["instituicao_parceira","instituicao","Instituição","instituicao_parceira_nome"],
       tipo: ["tipo_instrumento","Tipo","tipo"],
       idDisplay: ["identificacao","Identificação","id_instrumento","ID"],
+      idRelacao: ["id_instrumento","ID"],
       idDedup: ["id_instrumento","ID","identificacao","Identificação","numero_processo","Processo","processo"],
       processo: ["numero_processo","Processo","processo"],
       diretoria: ["diretoria_responsavel","Diretoria","setor_lotacao","Setor","setor"],
@@ -1516,6 +1519,21 @@
       produtos: ["produtos_gerados","produtos_gerados.1","produtos","Produtos"]
     };
 
+    const CAMPOS_ADITIVO = {
+      idInstrumento: ["id_instrumento"],
+      numero: ["numero_aditivo"],
+      tipoAlteracao: ["tipo_alteracao"],
+      processo: ["numero_processo"],
+      dataAssinatura: ["data_assinatura"],
+      dataPublicacao: ["data_publicacao"],
+      publicacaoDoe: ["publicacao_doe"],
+      terminoAnterior: ["vigencia_termino_anterior"],
+      terminoNova: ["vigencia_termino_nova"],
+      prazoMeses: ["prazo_prorrogacao_meses"],
+      valor: ["valor_aditivo"],
+      descricao: ["descricao"]
+    };
+
     // =========================
     // Helpers
     // =========================
@@ -1533,6 +1551,37 @@
         if (obj && obj[k] !== undefined && obj[k] !== null && String(obj[k]).trim() !== "") return obj[k];
       }
       return "";
+    }
+
+    function groupAditivos(rows) {
+      const grouped = new Map();
+      (rows || []).forEach(row => {
+        const id = String(getFirst(row, CAMPOS_ADITIVO.idInstrumento) || "").trim();
+        if (!id) return;
+        if (!grouped.has(id)) grouped.set(id, []);
+        grouped.get(id).push(row);
+      });
+      grouped.forEach(items => items.sort((a, b) => {
+        const na = Number(getFirst(a, CAMPOS_ADITIVO.numero)) || 0;
+        const nb = Number(getFirst(b, CAMPOS_ADITIVO.numero)) || 0;
+        return na - nb;
+      }));
+      return grouped;
+    }
+
+    function isVigentePorAditivo(row, grouped) {
+      if (isConcluido(row)) return false;
+      const id = String(getFirst(row, CAMPOS.idRelacao) || "").trim();
+      const terminoAtual = parseDateAny(getFirst(row, CAMPOS.termino));
+      const items = id && grouped ? (grouped.get(id) || []) : [];
+      if (!terminoAtual || !items.length) return false;
+      return items.some(aditivo => {
+        const terminoNovo = parseDateAny(getFirst(aditivo, CAMPOS_ADITIVO.terminoNova));
+        return terminoNovo &&
+          terminoNovo.getFullYear() === terminoAtual.getFullYear() &&
+          terminoNovo.getMonth() === terminoAtual.getMonth() &&
+          terminoNovo.getDate() === terminoAtual.getDate();
+      });
     }
 
     function norm(s) {
@@ -1766,6 +1815,7 @@
     // Estado
     // =========================
     let tbl = [];
+    let aditivosPorInstrumento = new Map();
     let activeMonth = null;
     let selectedYears = new Set();
     let selectedEndYears = new Set();
@@ -1897,6 +1947,8 @@
         const inst  = getFirst(r, CAMPOS.instituicao);
         const tipo  = getFirst(r, CAMPOS.tipo);
         const proc  = getFirst(r, CAMPOS.processo);
+        const idRelacao = String(getFirst(r, CAMPOS.idRelacao) || "").trim();
+        const aditivosEstruturados = idRelacao ? (aditivosPorInstrumento.get(idRelacao) || []) : [];
 
         const inicio = formatDateBR(getFirst(r, CAMPOS.inicio));
         const venc   = formatDateBR(getFirst(r, CAMPOS.termino));
@@ -1905,14 +1957,17 @@
         // Apresentação apenas: instrumento já concluído (vigencia_termino no passado) exibe "VENCIDO"
         // em vez do rótulo de prazo futuro. Não altera computeStatus, KPIs, filtros nem exportação CSV.
         const statDisplay = (isConcluido(r) && stat !== "SEM DATA" && stat !== "ARQUIVADO") ? "VENCIDO" : stat;
-        const statCell = stat === "SEM DATA" ? `<span class="badge-semdata">SEM DATA</span>` : escapeHTML(statDisplay || "—");
+        const vigentePorAditivo = isVigentePorAditivo(r, aditivosPorInstrumento);
+        const statCell = stat === "SEM DATA"
+          ? `<span class="badge-semdata">SEM DATA</span>`
+          : `${escapeHTML(statDisplay || "—")}${vigentePorAditivo ? `<br><span class="muted" style="font-size:10px;font-weight:600;white-space:nowrap;">POR ADITIVO</span>` : ""}`;
         const diretoria = getFirst(r, CAMPOS.diretoria);
         const gerencia  = getFirst(r, CAMPOS.gerencia);
 
         const possuiAditivoRaw = getFirst(r, CAMPOS.possuiAditivo);
         const qtdAditivosRaw   = getFirst(r, CAMPOS.qtdAditivos);
         const possuiAditivo = (possuiAditivoRaw ? String(possuiAditivoRaw) : "").trim().toUpperCase();
-        const qtdAditivos   = (qtdAditivosRaw ? String(qtdAditivosRaw) : "").trim();
+        const qtdAditivos   = (qtdAditivosRaw ? String(qtdAditivosRaw) : (aditivosEstruturados.length ? String(aditivosEstruturados.length) : "")).trim();
 
         let aditivosLabel = "NÃO";
         if (["SIM","S","TRUE","1"].includes(possuiAditivo)) {
@@ -1928,6 +1983,7 @@
         const repasse       = getFirst(r, CAMPOS.repasse);
 
         const dtAss  = formatDateBR(getFirst(r, CAMPOS.dataAssinatura));
+        const terminoOriginal = formatDateBR(getFirst(r, CAMPOS.terminoOriginal)) || venc;
 
         // ✅ "Publicação DOE" deve pegar o número do extrato (e também aceitar publicacao_doe)
         const dtDoe = getFirst(r, CAMPOS.publicacaoDoe);
@@ -1943,8 +1999,29 @@
 
         // Aditivos: detalhe cadastrado em coluna própria (aditivos_detalhe), 1 por " | ".
         // Nunca usar ";" no valor (é delimitador do CSV e separador de bullet).
-        const temAditivo    = ["SIM","S","TRUE","1"].includes(possuiAditivo);
+        const temAditivo    = ["SIM","S","TRUE","1"].includes(possuiAditivo) || aditivosEstruturados.length > 0;
         const aditivosItens = splitBullets(getFirst(r, CAMPOS.aditivosDetalhe));
+        const aditivosHtml = aditivosEstruturados.map(aditivo => {
+          const numero = getFirst(aditivo, CAMPOS_ADITIVO.numero);
+          const prazo = getFirst(aditivo, CAMPOS_ADITIVO.prazoMeses);
+          const campos = [
+            ["Tipo de alteração:", getFirst(aditivo, CAMPOS_ADITIVO.tipoAlteracao)],
+            ["Processo do aditivo:", getFirst(aditivo, CAMPOS_ADITIVO.processo)],
+            ["Assinatura:", formatDateBR(getFirst(aditivo, CAMPOS_ADITIVO.dataAssinatura))],
+            ["Publicação:", formatDateBR(getFirst(aditivo, CAMPOS_ADITIVO.dataPublicacao))],
+            ["Publicação DOE:", getFirst(aditivo, CAMPOS_ADITIVO.publicacaoDoe)],
+            ["Término anterior:", formatDateBR(getFirst(aditivo, CAMPOS_ADITIVO.terminoAnterior))],
+            ["Novo término:", formatDateBR(getFirst(aditivo, CAMPOS_ADITIVO.terminoNova))],
+            ["Prazo de prorrogação:", prazo ? `${prazo} meses` : ""],
+            ["Valor do aditivo:", getFirst(aditivo, CAMPOS_ADITIVO.valor)],
+            ["Descrição:", getFirst(aditivo, CAMPOS_ADITIVO.descricao)]
+          ].filter(([, valor]) => String(valor || "").trim());
+          return `
+            <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border-subtle);">
+              <div style="font-size:13px;font-weight:700;color:#1e3a5f;margin-bottom:6px;">${escapeHTML(numero ? `${numero}º Aditivo` : "Aditivo")}</div>
+              <div class="kv">${campos.map(([chave, valor]) => `<div class="k">${escapeHTML(chave)}</div><div class="v">${escapeHTML(valor)}</div>`).join("")}</div>
+            </div>`;
+        }).join("");
 
         const tr = document.createElement("tr");
         tr.innerHTML = `
@@ -1975,15 +2052,23 @@
 
                 <div class="k">Estado:</div><div class="v">${escapeHTML(estado || "—")}</div>
 
-                <div class="k">Assinatura:</div><div class="v">${escapeHTML(dtAss || "—")}</div>
-                <div class="k">Publicação DOE:</div><div class="v">${escapeHTML(dtDoe || "—")}</div>
-                ${linkDoe ? `<div class="k">Link DOE:</div><div class="v"><a href="${escapeHTML(linkDoe)}" target="_blank" rel="noopener noreferrer">Abrir</a></div>` : ""}
               </div>
+
+              <details open>
+                <summary>Instrumento original</summary>
+                <div class="kv">
+                  <div class="k">Processo original:</div><div class="v">${escapeHTML(proc || "—")}</div>
+                  <div class="k">Assinatura original:</div><div class="v">${escapeHTML(dtAss || "—")}</div>
+                  <div class="k">Vigência original:</div><div class="v">${escapeHTML(inicio || "—")} a ${escapeHTML(terminoOriginal || "—")}</div>
+                  <div class="k">Publicação DOE:</div><div class="v">${escapeHTML(dtDoe || "—")}</div>
+                  ${linkDoe ? `<div class="k">Link DOE:</div><div class="v"><a href="${escapeHTML(linkDoe)}" target="_blank" rel="noopener noreferrer">Abrir</a></div>` : ""}
+                </div>
+              </details>
 
               ${(temAditivo || aditivosItens.length) ? `
               <details>
                 <summary>Aditivos${qtdAditivos ? ` (${escapeHTML(qtdAditivos)})` : ""} <span class="summary-hint">(clique para ver)</span></summary>
-                ${aditivosItens.length ? makeUl(aditivosItens) : `<div class="muted">Aditivo registrado; detalhe ainda não cadastrado.</div>`}
+                ${aditivosHtml || (aditivosItens.length ? makeUl(aditivosItens) : `<div class="muted">Aditivo registrado; detalhe ainda não cadastrado.</div>`)}
               </details>` : ""}
 
               <details ${objetivoItens.length ? "open" : ""}>
@@ -3337,7 +3422,27 @@
         });
       });
 
+      const parsedAditivos = await new Promise(resolve => {
+        const csvNoCache = ADITIVOS_CSV_URL + "?v=" + Date.now();
+        Papa.parse(csvNoCache, {
+          download: true,
+          header: true,
+          skipEmptyLines: "greedy",
+          transformHeader: (h) => String(h || "").replace(/^\uFEFF/, "").trim(),
+          complete: (res) => {
+            if (res.errors && res.errors.length) console.warn("PapaParse aditivos:", res.errors);
+            const rows = (res.data || []).filter(r => Object.values(r || {}).some(v => String(v ?? "").trim() !== ""));
+            resolve(rows);
+          },
+          error: (err) => {
+            console.warn("Aditivos não carregados; usando detalhe textual do instrumento.", err);
+            resolve([]);
+          }
+        });
+      });
+
       tbl = parsed;
+      aditivosPorInstrumento = groupAditivos(parsedAditivos);
 
       // -------------------------------------------------------------
       // Rede de proteção anti-duplicidade no carregamento (Onda 2 — 2026-07-24)
