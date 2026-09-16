@@ -899,15 +899,18 @@
     .explore-caption { color:#64748b; font-size:12px; line-height:1.5; margin:8px 0; }
     .explore-tools { margin:0 0 16px; padding:12px 16px; border:1px solid var(--border-subtle); border-radius:12px; background:#fff; }
     .explore-tools > summary { font-size:13px; color:#1e3a5f; padding:4px 0; }
-    .search-label { display:block; font-size:13px; color:#1e3a5f; font-weight:600; margin-bottom:2px; }
+    .search-label { display:flex; align-items:center; gap:7px; font-size:15px; color:#1e3a5f; font-weight:700; margin-bottom:8px; letter-spacing:.2px; }
+    .search-label svg { color:#1a5e3f; flex:0 0 auto; }
     .command-form { display:flex; gap:8px; margin-top:12px; }
     .command-form input { flex:1; min-width:0; }
     .search-field { position:relative; flex:1; min-width:0; }
-    .search-field input { width:100%; padding-right:32px; }
+    .search-icon { position:absolute; left:13px; top:50%; transform:translateY(-50%); color:#94a3b8; pointer-events:none; display:flex; }
+    .search-field input { width:100%; padding:11px 36px 11px 40px; font-size:15px; }
     .search-field input::-webkit-search-cancel-button { -webkit-appearance:none; appearance:none; }
     .search-clear { position:absolute; right:8px; top:50%; transform:translateY(-50%); width:20px; height:20px; padding:0; display:flex; align-items:center; justify-content:center; border:none; border-radius:50%; background:transparent; color:#94a3b8; font-size:18px; line-height:1; cursor:pointer; transition:color var(--transition-fast), background var(--transition-fast); }
     .search-clear:hover { color:#334155; background:#f1f5f9; }
     .search-clear[hidden] { display:none; }
+    #searchBar { background:#f6f9fc; border-color:#dbe4ee; box-shadow:0 1px 4px rgba(15,46,32,0.06); padding:16px; }
     .command-examples { display:flex; flex-wrap:wrap; gap:6px; margin:10px 0; }
     .command-examples button, .filter-chip { border:1px solid #d8e2ec; background:#f4f7fb; color:#274b70; border-radius:7px; padding:6px 9px; font:inherit; font-size:12px; cursor:pointer; text-align:left; overflow-wrap:anywhere; }
     .command-examples button:hover, .filter-chip:hover { background:#e9f0f7; border-color:#8aa9c7; }
@@ -1178,9 +1181,10 @@
       </section>
 
       <div class="explore-tools" id="searchBar">
-        <label class="search-label" for="quickSearch">Digite uma palavra para buscar…</label>
+        <label class="search-label" for="quickSearch"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>Busca rápida</label>
         <div class="command-form">
           <div class="search-field">
+            <span class="search-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></span>
             <input id="quickSearch" class="select" type="search" role="searchbox" aria-label="Pesquisar instrumentos por identificação, instituição, diretoria, processo, nome de representante ou e-mail" placeholder="Pesquisar instrumento, instituição, diretoria, processo, pessoa ou e-mail…" />
             <button class="search-clear" type="button" id="clearSearch" aria-label="Limpar busca" title="Limpar busca" hidden>&times;</button>
           </div>
