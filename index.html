@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Controle de Acordos de Cooperação Técnica, Convênios e Termos de Colaboração</title>
+  <title>Controle de Instrumentos de Cooperação e Parcerias Institucionais</title>
 
   <!-- libs (compatíveis com GitHub Pages e localhost) -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
@@ -911,6 +911,8 @@
     .search-clear:hover { color:#334155; background:#f1f5f9; }
     .search-clear[hidden] { display:none; }
     #searchBar { background:#f6f9fc; border-color:#dbe4ee; box-shadow:0 1px 4px rgba(15,46,32,0.06); padding:16px; }
+    .doc-link { display:inline-flex; align-items:center; gap:4px; color:#1a5e3f; font-weight:600; text-decoration:none; }
+    .doc-link:hover { text-decoration:underline; }
     .command-examples { display:flex; flex-wrap:wrap; gap:6px; margin:10px 0; }
     .command-examples button, .filter-chip { border:1px solid #d8e2ec; background:#f4f7fb; color:#274b70; border-radius:7px; padding:6px 9px; font:inherit; font-size:12px; cursor:pointer; text-align:left; overflow-wrap:anywhere; }
     .command-examples button:hover, .filter-chip:hover { background:#e9f0f7; border-color:#8aa9c7; }
@@ -1060,7 +1062,7 @@
       <div class="brand-text">
         <div class="org">FVS-RCP • DEPI</div>
         <h1 class="title">
-          Controle de Acordos de Cooperação Técnica, Convênios e Termos de Colaboração
+          Controle de Instrumentos de Cooperação e Parcerias Institucionais
         </h1>
         <div class="subtitle">Painel de monitoramento de vigência e renovação</div>
         <div class="ref-date" id="refDate" aria-live="polite"></div>
@@ -1520,7 +1522,8 @@
       publicacaoDoe: ["publicacao_doe","Publicação DOE","numero_extrato_publicado","numero_extrato_publicacao","extrato_publicacao","Extrato (nº)","extrato"],
       linkDoe: ["link_publicacao_doe","link_doe","publicacao_doe_link"],
       objetivo: ["objetivo_resumido","objetivo_geral","objeto","Objeto"],
-      produtos: ["produtos_gerados","produtos_gerados.1","produtos","Produtos"]
+      produtos: ["produtos_gerados","produtos_gerados.1","produtos","Produtos"],
+      documentoUrl: ["documento_url","documento","url_documento","link_documento"]
     };
 
     const CAMPOS_ADITIVO = {
@@ -2005,6 +2008,7 @@
         // Nunca usar ";" no valor (é delimitador do CSV e separador de bullet).
         const temAditivo    = ["SIM","S","TRUE","1"].includes(possuiAditivo) || aditivosEstruturados.length > 0;
         const aditivosItens = splitBullets(getFirst(r, CAMPOS.aditivosDetalhe));
+        const docUrl        = String(getFirst(r, CAMPOS.documentoUrl) || "").trim();
         const aditivosHtml = aditivosEstruturados.map(aditivo => {
           const numero = getFirst(aditivo, CAMPOS_ADITIVO.numero);
           const prazo = getFirst(aditivo, CAMPOS_ADITIVO.prazoMeses);
@@ -2055,6 +2059,8 @@
                 <div class="k">Repasse:</div><div class="v">${escapeHTML(repasse || "—")}</div>
 
                 <div class="k">Estado:</div><div class="v">${escapeHTML(estado || "—")}</div>
+
+                <div class="k">Instrumento:</div><div class="v">${docUrl ? `<a class="doc-link" href="${escapeHTML(docUrl)}" target="_blank" rel="noopener noreferrer">📄 Ver instrumento</a>` : "—"}</div>
 
               </div>
 
