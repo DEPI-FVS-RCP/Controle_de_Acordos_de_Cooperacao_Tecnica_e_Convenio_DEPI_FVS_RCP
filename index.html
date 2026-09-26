@@ -476,18 +476,26 @@
 
     .tbl tbody td { text-align:center; white-space: nowrap; }
 
-    /* Colunas textuais longas quebram à esquerda; demais ficam centralizadas e enxutas.
-       Layout de 6 colunas (revisão UX 2026-09-25): Identificação · Tipo · Instituição ·
-       Status · Vencimento atual · Detalhes. Cabe 100% no container, sem rolagem horizontal. */
-    .tbl thead th.col-ident, .tbl tbody td.col-ident { text-align:left; white-space: normal; word-break: break-word; }
-    .tbl thead th.col-inst,  .tbl tbody td.col-inst  { text-align:left; white-space: normal; word-break: break-word; }
+    .tbl thead th:nth-child(3),
+    .tbl tbody td:nth-child(3){ text-align:left; white-space: normal; }
 
-    .tbl th:nth-child(1), .tbl td:nth-child(1) { width: 16%; }  /* Identificação */
-    .tbl th:nth-child(2), .tbl td:nth-child(2) { width: 9%;  }  /* Tipo */
-    .tbl th:nth-child(3), .tbl td:nth-child(3) { width: 40%; }  /* Instituição */
-    .tbl th:nth-child(4), .tbl td:nth-child(4) { width: 15%; }  /* Status */
-    .tbl th:nth-child(5), .tbl td:nth-child(5) { width: 11%; white-space: normal; }  /* Vencimento atual */
-    .tbl th:nth-child(6), .tbl td:nth-child(6) { width: 9%;  }  /* Detalhes */
+    .tbl thead th:nth-child(10),
+    .tbl tbody td:nth-child(10){ white-space: normal; word-break: break-word; }
+
+    .tbl tbody td:nth-child(6){ white-space: normal; }
+
+    /* Redistribuição de largura das colunas: tabela cabe 100% no container, sem rolagem horizontal */
+    .tbl th:nth-child(1),  .tbl td:nth-child(1)  { width: 7%; }
+    .tbl th:nth-child(2),  .tbl td:nth-child(2)  { width: 5%; }
+    .tbl th:nth-child(3),  .tbl td:nth-child(3)  { width: 20%; }
+    .tbl th:nth-child(4),  .tbl td:nth-child(4)  { width: 6%; }
+    .tbl th:nth-child(5),  .tbl td:nth-child(5)  { width: 6%; }
+    .tbl th:nth-child(6),  .tbl td:nth-child(6)  { width: 7%; }
+    .tbl th:nth-child(7),  .tbl td:nth-child(7)  { width: 8%; }
+    .tbl th:nth-child(8),  .tbl td:nth-child(8)  { width: 8%; }
+    .tbl th:nth-child(9),  .tbl td:nth-child(9)  { width: 5%; }
+    .tbl th:nth-child(10), .tbl td:nth-child(10) { width: 22%; }
+    .tbl th:nth-child(11), .tbl td:nth-child(11) { width: 6%; }
     .tbl .js-toggle {
       min-width: 0;
       width: 56px;
@@ -1325,11 +1333,16 @@
             <table id="tbl" class="tbl">
               <thead>
                 <tr>
-                  <th class="col-ident">Identificação</th>
+                  <th>Identificação</th>
                   <th>Tipo</th>
-                  <th class="col-inst">Instituição</th>
+                  <th>Instituição</th>
+                  <th>Diretoria</th>
+                  <th>Gerência</th>
                   <th>Status</th>
+                  <th>Início</th>
                   <th>Vencimento<br>atual</th>
+                  <th>Aditivos</th>
+                  <th>Processo</th>
                   <th>Detalhes</th>
                 </tr>
               </thead>
@@ -1349,11 +1362,16 @@
               <table class="tbl tbl-concluidos">
                 <thead>
                   <tr>
-                    <th class="col-ident">Identificação</th>
+                    <th>Identificação</th>
                     <th>Tipo</th>
-                    <th class="col-inst">Instituição</th>
+                    <th>Instituição</th>
+                    <th>Diretoria</th>
+                    <th>Gerência</th>
                     <th>Status</th>
+                    <th>Início</th>
                     <th>Vencimento<br>atual</th>
+                    <th>Aditivos</th>
+                    <th>Processo</th>
                     <th>Detalhes</th>
                   </tr>
                 </thead>
@@ -1907,7 +1925,7 @@
       if (!rows || rows.length === 0) {
         const trEmpty = document.createElement("tr");
         trEmpty.className = "emptyRow";
-        trEmpty.innerHTML = `<td colspan="6" class="emptyState">Nenhum instrumento encontrado com os filtros atuais.</td>`;
+        trEmpty.innerHTML = `<td colspan="11" class="emptyState">Nenhum instrumento encontrado com os filtros atuais.</td>`;
         targetEl.appendChild(trEmpty);
         return;
       }
@@ -1996,11 +2014,16 @@
 
         const tr = document.createElement("tr");
         tr.innerHTML = `
-          <td class="col-ident">${escapeHTML(ident || "—")}</td>
+          <td>${escapeHTML(ident || "—")}</td>
           <td>${escapeHTML(tipo || "—")}</td>
-          <td class="col-inst">${escapeHTML(inst || "—")}</td>
+          <td>${escapeHTML(inst || "—")}</td>
+          <td>${escapeHTML(diretoria || "—")}</td>
+          <td>${escapeHTML(gerencia || "—")}</td>
           <td>${statCell}</td>
+          <td>${escapeHTML(inicio || "—")}</td>
           <td>${escapeHTML(venc || "—")}</td>
+          <td>${escapeHTML(aditivosLabel || "NÃO")}</td>
+          <td>${escapeHTML(proc || "—")}</td>
           <td><button class="btn js-toggle" type="button" aria-expanded="false" aria-label="Ver detalhes do instrumento">▼</button></td>
         `;
         targetEl.appendChild(tr);
@@ -2009,14 +2032,9 @@
         trDetails.className = "detailsRow";
         trDetails.style.display = "none";
         trDetails.innerHTML = `
-          <td colspan="6">
+          <td colspan="11">
             <div class="detailsBox">
               <div class="kv">
-                <div class="k">Diretoria:</div><div class="v">${escapeHTML(diretoria || "—")}</div>
-                <div class="k">Gerência:</div><div class="v">${escapeHTML(gerencia || "—")}</div>
-                <div class="k">Início da vigência:</div><div class="v">${escapeHTML(inicio || "—")}</div>
-                <div class="k">Aditivos:</div><div class="v">${escapeHTML(aditivosLabel || "NÃO")}</div>
-
                 <div class="k">Coord. parceiro:</div><div class="v">${escapeHTML(coordParceiro || "—")}</div>
                 <div class="k">Resp. FVS:</div><div class="v">${escapeHTML(respFvs || "—")}</div>
                 <div class="k">Repasse:</div><div class="v">${escapeHTML(repasse || "—")}</div>
