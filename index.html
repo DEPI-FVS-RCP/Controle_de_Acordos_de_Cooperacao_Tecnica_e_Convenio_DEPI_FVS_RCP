@@ -38,7 +38,8 @@
 
     body { font-family: var(--font-family-base); -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; margin: 18px 24px; background:var(--bg); position: relative; }
 
-    /* Teste visual v2: fundo institucional discreto (rede de cooperação) — remover restaurando index.html anterior */
+    /* Fundo institucional discreto (rede de cooperação) — adotado oficialmente na revisão UX 2026-09-25.
+       Opacidade 0.045; puramente decorativo (pointer-events:none), não afeta leitura nem impressão. */
     body::before {
       content: "";
       position: fixed;
@@ -87,9 +88,12 @@
     .logo.depi{ height:54px; border-radius:8px; }
 
     .brand-text .org{ font-size:11px; color:var(--muted); letter-spacing:var(--tracking-label); text-transform:uppercase; margin-bottom:2px; display:flex; align-items:center; gap:8px; }
-    .brand-text .title{ margin:0; font-size:20px; font-weight:700; line-height:1.15; letter-spacing:-0.01em; display:flex; align-items:center; gap:10px; }
-    .brand-text .subtitle{ margin-top:4px; font-size:13px; color:var(--muted); }
-    .brand-text .ref-date{ margin-top:2px; font-size:12px; color:var(--muted); font-style:italic; }
+    .brand-text .title{ margin:0; font-size:21px; font-weight:700; line-height:1.15; letter-spacing:-0.01em; display:flex; align-items:center; gap:10px; }
+    /* Meta em linha única (subtítulo + data de referência) — cabeçalho mais leve, revisão UX 2026-09-25 */
+    .brand-text .brand-meta{ display:flex; flex-wrap:wrap; align-items:baseline; gap:2px 10px; margin-top:4px; }
+    .brand-text .subtitle{ font-size:13px; color:var(--muted); }
+    .brand-text .ref-date{ font-size:12px; color:var(--muted); font-style:italic; }
+    .brand-text .brand-meta .ref-date:not(:empty)::before{ content:"•"; margin-right:10px; color:var(--border-subtle); font-style:normal; }
 
     .titleIcon{ width: 24px; height: 24px; flex: 0 0 24px; }
 
@@ -178,6 +182,13 @@
     .card.kpi-slate .value { color: #475569; }
     .card.kpi-teal  { border-top: 4px solid #0f766e; }
     .card.kpi-teal  .value { color: #0f766e; }
+
+    /* KPIs secundários (informativos, não de prazo): Concluídos e Com aditivo.
+       Revisão UX 2026-09-25 — hierarquia da primeira dobra. Mesmo clique/rota,
+       apenas rebaixados visualmente para dar precedência aos 4 KPIs de situação. */
+    .card.kpi-secondary { min-width: 180px; min-height: 84px; padding: var(--space-3) var(--space-4); background: #fbfcfd; }
+    .card.kpi-secondary .value { font-size:24px; }
+    .card.kpi-secondary .kpiLabel { color:#94a3b8; }
 
     .multiselect{ position: relative; }
     .multiselect-btn{
@@ -335,6 +346,60 @@
       font-weight: 600;
     }
 
+    /* Ressalva "rebaixada" (padrão asterisco-de-preço): o dado fica confiante e a
+       ressalva vira um ⓘ discreto, com o texto completo a um toque. NADA é escondido
+       de leitor de tela — o texto vai em aria-label; o balão é apenas o reforço visual. */
+    .hint {
+      position: relative; display: inline-flex; align-items: center;
+      vertical-align: middle; margin-left: 5px; cursor: help;
+    }
+    .hint-mark {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 15px; height: 15px; border-radius: 50%;
+      border: 1px solid #94a3b8; color: #64748b;
+      font-family: Georgia, "Times New Roman", serif; font-style: italic;
+      font-size: 11px; font-weight: 700; line-height: 1;
+      transition: border-color var(--transition-fast), color var(--transition-fast), box-shadow var(--transition-fast);
+    }
+    .hint:hover .hint-mark { border-color: #3b6ea5; color: #3b6ea5; }
+    .hint:focus { outline: none; }
+    .hint:focus .hint-mark { border-color: #3b6ea5; color: #3b6ea5; box-shadow: var(--focus-ring); }
+    .hint-bubble {
+      position: absolute; bottom: calc(100% + 7px); left: 50%;
+      transform: translateX(-50%) translateY(4px);
+      background: #1e293b; color: #fff;
+      font-size: 11px; font-weight: 500; line-height: 1.35;
+      font-family: var(--font-family-base); text-align: left; white-space: normal;
+      width: max-content; max-width: 230px;
+      padding: 7px 9px; border-radius: 7px;
+      box-shadow: 0 8px 24px rgba(15,23,42,.20);
+      opacity: 0; visibility: hidden; pointer-events: none; z-index: 40;
+      transition: opacity var(--transition-fast), transform var(--transition-fast);
+    }
+    .hint-bubble::after {
+      content: ""; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+      border: 5px solid transparent; border-top-color: #1e293b;
+    }
+    .hint:hover .hint-bubble,
+    .hint:focus .hint-bubble,
+    .hint:focus-within .hint-bubble {
+      opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0);
+    }
+    @media print { .hint-bubble { display: none; } }
+    @media (prefers-reduced-motion: reduce) {
+      .hint-bubble { transition: none; }
+    }
+
+    /* Transição suave entre abas Operacional ↔ Histórico (revisão UX 2026-09-25).
+       Aplicada por JS à view recém-exibida; puramente estética. */
+    @keyframes viewFadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .view-fade { animation: viewFadeIn .18s ease both; }
+    @media print { .view-fade { animation: none; } }
+    @media (prefers-reduced-motion: reduce) { .view-fade { animation: none; } }
+
     .tableWrap{
       margin-top: 8px;
       border:1px solid var(--border-subtle);
@@ -411,26 +476,18 @@
 
     .tbl tbody td { text-align:center; white-space: nowrap; }
 
-    .tbl thead th:nth-child(3),
-    .tbl tbody td:nth-child(3){ text-align:left; white-space: normal; }
+    /* Colunas textuais longas quebram à esquerda; demais ficam centralizadas e enxutas.
+       Layout de 6 colunas (revisão UX 2026-09-25): Identificação · Tipo · Instituição ·
+       Status · Vencimento atual · Detalhes. Cabe 100% no container, sem rolagem horizontal. */
+    .tbl thead th.col-ident, .tbl tbody td.col-ident { text-align:left; white-space: normal; word-break: break-word; }
+    .tbl thead th.col-inst,  .tbl tbody td.col-inst  { text-align:left; white-space: normal; word-break: break-word; }
 
-    .tbl thead th:nth-child(10),
-    .tbl tbody td:nth-child(10){ white-space: normal; word-break: break-word; }
-
-    .tbl tbody td:nth-child(6){ white-space: normal; }
-
-    /* Redistribuição de largura das colunas: tabela cabe 100% no container, sem rolagem horizontal */
-    .tbl th:nth-child(1),  .tbl td:nth-child(1)  { width: 7%; }
-    .tbl th:nth-child(2),  .tbl td:nth-child(2)  { width: 5%; }
-    .tbl th:nth-child(3),  .tbl td:nth-child(3)  { width: 20%; }
-    .tbl th:nth-child(4),  .tbl td:nth-child(4)  { width: 6%; }
-    .tbl th:nth-child(5),  .tbl td:nth-child(5)  { width: 6%; }
-    .tbl th:nth-child(6),  .tbl td:nth-child(6)  { width: 7%; }
-    .tbl th:nth-child(7),  .tbl td:nth-child(7)  { width: 8%; }
-    .tbl th:nth-child(8),  .tbl td:nth-child(8)  { width: 8%; }
-    .tbl th:nth-child(9),  .tbl td:nth-child(9)  { width: 5%; }
-    .tbl th:nth-child(10), .tbl td:nth-child(10) { width: 22%; }
-    .tbl th:nth-child(11), .tbl td:nth-child(11) { width: 6%; }
+    .tbl th:nth-child(1), .tbl td:nth-child(1) { width: 16%; }  /* Identificação */
+    .tbl th:nth-child(2), .tbl td:nth-child(2) { width: 9%;  }  /* Tipo */
+    .tbl th:nth-child(3), .tbl td:nth-child(3) { width: 40%; }  /* Instituição */
+    .tbl th:nth-child(4), .tbl td:nth-child(4) { width: 15%; }  /* Status */
+    .tbl th:nth-child(5), .tbl td:nth-child(5) { width: 11%; white-space: normal; }  /* Vencimento atual */
+    .tbl th:nth-child(6), .tbl td:nth-child(6) { width: 9%;  }  /* Detalhes */
     .tbl .js-toggle {
       min-width: 0;
       width: 56px;
@@ -1048,8 +1105,10 @@
         <h1 class="title">
           Controle de Instrumentos de Cooperação e Parcerias Institucionais
         </h1>
-        <div class="subtitle">Painel de monitoramento de vigência e renovação</div>
-        <div class="ref-date" id="refDate" aria-live="polite"></div>
+        <div class="brand-meta">
+          <span class="subtitle">Painel de monitoramento de vigência e renovação</span>
+          <span class="ref-date" id="refDate" aria-live="polite"></span>
+        </div>
       </div>
     </div>
   </header>
@@ -1142,12 +1201,12 @@
           <div class="value" id="kpi_critico">—</div>
           <span class="card-action">Clique para explorar críticos →</span>
         </button>
-        <button type="button" class="card kpi-slate" data-kpi="concluidos" aria-pressed="false" aria-haspopup="dialog">
+        <button type="button" class="card kpi-slate kpi-secondary" data-kpi="concluidos" aria-pressed="false" aria-haspopup="dialog">
           <div class="kpiLabel">Concluídos</div>
           <div class="value" id="kpi_concluidos">—</div>
           <span class="card-action">Clique para explorar concluídos →</span>
         </button>
-        <button type="button" class="card kpi-teal" data-kpi="aditivos" aria-pressed="false" aria-haspopup="dialog">
+        <button type="button" class="card kpi-teal kpi-secondary" data-kpi="aditivos" aria-pressed="false" aria-haspopup="dialog">
           <div class="kpiLabel">Com aditivo</div>
           <div class="value" id="kpi_aditivos">—</div>
           <span class="card-action">Clique para explorar aditivos →</span>
@@ -1266,16 +1325,11 @@
             <table id="tbl" class="tbl">
               <thead>
                 <tr>
-                  <th>Identificação</th>
+                  <th class="col-ident">Identificação</th>
                   <th>Tipo</th>
-                  <th>Instituição</th>
-                  <th>Diretoria</th>
-                  <th>Gerência</th>
+                  <th class="col-inst">Instituição</th>
                   <th>Status</th>
-                  <th>Início</th>
                   <th>Vencimento<br>atual</th>
-                  <th>Aditivos</th>
-                  <th>Processo</th>
                   <th>Detalhes</th>
                 </tr>
               </thead>
@@ -1295,16 +1349,11 @@
               <table class="tbl tbl-concluidos">
                 <thead>
                   <tr>
-                    <th>Identificação</th>
+                    <th class="col-ident">Identificação</th>
                     <th>Tipo</th>
-                    <th>Instituição</th>
-                    <th>Diretoria</th>
-                    <th>Gerência</th>
+                    <th class="col-inst">Instituição</th>
                     <th>Status</th>
-                    <th>Início</th>
                     <th>Vencimento<br>atual</th>
-                    <th>Aditivos</th>
-                    <th>Processo</th>
                     <th>Detalhes</th>
                   </tr>
                 </thead>
@@ -1617,6 +1666,20 @@
       return `<ul>${items.map(i => `<li>${escapeHTML(i)}</li>`).join("")}</ul>`;
     }
 
+    // Ressalva rebaixada num ⓘ consistente. O texto completo vai SEMPRE em aria-label
+    // (leitor de tela lê tudo) e, fora de contêiner com overflow, também num balão visual.
+    // opts.nativeTip=true usa o title nativo em vez do balão CSS — necessário dentro da
+    // tabela, cujo overflow recortaria um balão absoluto; visualmente é o mesmo ⓘ.
+    function hint(text, opts) {
+      opts = opts || {};
+      const t = escapeHTML(String(text || ""));
+      if (!t) return "";
+      const nativeTitle = opts.nativeTip ? ` title="${t}"` : "";
+      const bubble = opts.nativeTip ? "" : `<span class="hint-bubble" role="tooltip">${t}</span>`;
+      return `<span class="hint" tabindex="0" role="note" aria-label="${t}"${nativeTitle}>`
+           + `<span class="hint-mark" aria-hidden="true">i</span>${bubble}</span>`;
+    }
+
     function getUF(r) {
       const ufRaw = getFirst(r, CAMPOS.uf);
       const uf = String(ufRaw || "").trim().toUpperCase();
@@ -1844,7 +1907,7 @@
       if (!rows || rows.length === 0) {
         const trEmpty = document.createElement("tr");
         trEmpty.className = "emptyRow";
-        trEmpty.innerHTML = `<td colspan="11" class="emptyState">Nenhum instrumento encontrado com os filtros atuais.</td>`;
+        trEmpty.innerHTML = `<td colspan="6" class="emptyState">Nenhum instrumento encontrado com os filtros atuais.</td>`;
         targetEl.appendChild(trEmpty);
         return;
       }
@@ -1867,7 +1930,7 @@
         const vigentePorAditivo = isVigentePorAditivo(r, aditivosPorInstrumento);
         const statCell = stat === "SEM DATA"
           ? `<span class="badge-semdata">SEM DATA</span>`
-          : `${escapeHTML(statDisplay || "—")}${vigentePorAditivo ? `<br><span class="muted" style="font-size:10px;font-weight:600;white-space:nowrap;">POR ADITIVO</span>` : ""}`;
+          : `${escapeHTML(statDisplay || "—")}${vigentePorAditivo ? hint("Vigência garantida por aditivo: o término efetivo é posterior ao término original do instrumento.", {nativeTip:true}) : ""}`;
         const diretoria = getFirst(r, CAMPOS.diretoria);
         const gerencia  = getFirst(r, CAMPOS.gerencia);
 
@@ -1933,16 +1996,11 @@
 
         const tr = document.createElement("tr");
         tr.innerHTML = `
-          <td>${escapeHTML(ident || "—")}</td>
+          <td class="col-ident">${escapeHTML(ident || "—")}</td>
           <td>${escapeHTML(tipo || "—")}</td>
-          <td>${escapeHTML(inst || "—")}</td>
-          <td>${escapeHTML(diretoria || "—")}</td>
-          <td>${escapeHTML(gerencia || "—")}</td>
+          <td class="col-inst">${escapeHTML(inst || "—")}</td>
           <td>${statCell}</td>
-          <td>${escapeHTML(inicio || "—")}</td>
           <td>${escapeHTML(venc || "—")}</td>
-          <td>${escapeHTML(aditivosLabel || "NÃO")}</td>
-          <td>${escapeHTML(proc || "—")}</td>
           <td><button class="btn js-toggle" type="button" aria-expanded="false" aria-label="Ver detalhes do instrumento">▼</button></td>
         `;
         targetEl.appendChild(tr);
@@ -1951,9 +2009,14 @@
         trDetails.className = "detailsRow";
         trDetails.style.display = "none";
         trDetails.innerHTML = `
-          <td colspan="11">
+          <td colspan="6">
             <div class="detailsBox">
               <div class="kv">
+                <div class="k">Diretoria:</div><div class="v">${escapeHTML(diretoria || "—")}</div>
+                <div class="k">Gerência:</div><div class="v">${escapeHTML(gerencia || "—")}</div>
+                <div class="k">Início da vigência:</div><div class="v">${escapeHTML(inicio || "—")}</div>
+                <div class="k">Aditivos:</div><div class="v">${escapeHTML(aditivosLabel || "NÃO")}</div>
+
                 <div class="k">Coord. parceiro:</div><div class="v">${escapeHTML(coordParceiro || "—")}</div>
                 <div class="k">Resp. FVS:</div><div class="v">${escapeHTML(respFvs || "—")}</div>
                 <div class="k">Repasse:</div><div class="v">${escapeHTML(repasse || "—")}</div>
@@ -2327,7 +2390,7 @@
             : String(entry.year);
           const semAssinaturaHint = entry.assinaturaConhecida
             ? ""
-            : `<br><span class="muted" style="font-size:11px;">Assinatura não registrada — ano baseado no início da vigência</span>`;
+            : hint("Assinatura não registrada — ano baseado no início da vigência.");
           return `
             <div class="hist-list-item">
               <div class="hist-list-date">${dataCell}</div>
@@ -2378,6 +2441,11 @@
       tabBtnHistoricoEl.classList.toggle("active", isHist);
       tabBtnOperacionalEl.setAttribute("aria-selected", String(!isHist));
       tabBtnHistoricoEl.setAttribute("aria-selected", String(isHist));
+      // Transição estética: reinicia a animação de fade na view recém-exibida.
+      const shown = isHist ? viewHistoricoEl : viewOperacionalEl;
+      shown.classList.remove("view-fade");
+      void shown.offsetWidth; // reflow para permitir re-disparo da animação
+      shown.classList.add("view-fade");
       if (isHist) buildHistorico(tbl);
       else queueOperationalCharts(lastActiveRows.concat(lastConclRows));
     }
@@ -2817,14 +2885,18 @@
       document.getElementById("drawerToTable").hidden = drawerMode !== "operacional";
       const html = rows.map(r => {
         const historical = drawerMode === "historico" ? getHistEntry(r) : null;
-        const histText = historical ? (historical.assinaturaConhecida ? "Assinatura: " + formatDateBR(historical.date) : "Assinatura não registrada — ano baseado no início da vigência: " + historical.year) : "";
+        const assinaturaInfo = historical
+          ? (historical.assinaturaConhecida
+              ? `<p class="explore-caption">Assinatura: ${escapeHTML(formatDateBR(historical.date))}</p>`
+              : `<p class="explore-caption">Formalização: ano ${escapeHTML(String(historical.year))}${hint("Assinatura não registrada — ano baseado no início da vigência.", {nativeTip:true})}</p>`)
+          : "";
         const docUrl = String(getFirst(r, CAMPOS.documentoUrl) || "").trim();
         return `<article class="drawer-record">
           <h3>${escapeHTML(getFirst(r,CAMPOS.idDisplay) || "Sem identificação")} <span class="drawer-status">${escapeHTML(statusBucket(r))}</span></h3>
           <p>${escapeHTML(getFirst(r,CAMPOS.instituicao) || "Instituição não registrada")}</p>
           <p class="explore-caption">${escapeHTML(getFirst(r,CAMPOS.diretoria) || "Diretoria não registrada")} · ${escapeHTML(getUF(r) || "UF não registrada")}</p>
           <p>Vencimento: <strong>${escapeHTML(formatDateBR(getFirst(r,CAMPOS.termino)) || "Sem data")}</strong></p>
-          ${histText ? `<p class="explore-caption">${escapeHTML(histText)}</p>` : ""}
+          ${assinaturaInfo}
           <details><summary>Ver informações do instrumento</summary>
             <dl><dt>Tipo</dt><dd>${escapeHTML(getFirst(r,CAMPOS.tipo) || "—")}</dd>
             <dt>Início</dt><dd>${escapeHTML(formatDateBR(getFirst(r,CAMPOS.inicio)) || "—")}</dd>
