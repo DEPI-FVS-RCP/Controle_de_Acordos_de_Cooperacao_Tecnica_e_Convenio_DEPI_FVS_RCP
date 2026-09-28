@@ -476,6 +476,13 @@
 
     .tbl tbody td { text-align:center; white-space: nowrap; }
 
+    /* Coluna 1 (Identificação): cabeçalho longo ("IDENTIFICAÇÃO") não cabia em 7%
+       na fonte de sistema do macOS e era cortado. Redução cirúrgica só desta coluna
+       (fonte 9px + tracking menor); os valores (ex. 005/2025) continuam legíveis. */
+    .tbl thead th:nth-child(1){ font-size:9px; letter-spacing:.1px; }
+    .tbl thead th:nth-child(1),
+    .tbl tbody td:nth-child(1){ padding-left:6px; padding-right:6px; }
+
     .tbl thead th:nth-child(3),
     .tbl tbody td:nth-child(3){ text-align:left; white-space: normal; }
 
@@ -1338,9 +1345,9 @@
                   <th>Instituição</th>
                   <th>Diretoria</th>
                   <th>Gerência</th>
-                  <th>Status</th>
-                  <th>Início</th>
-                  <th>Vencimento<br>atual</th>
+                  <th>Status<span class="hint" tabindex="0" role="note" aria-label="Situação calculada a partir do vencimento atual: VIGENTE (acima de 180 dias), ALERTA 180 DIAS (até 180), CRÍTICO 60 DIAS (até 60), VENCIDO ou SEM DATA." title="Situação calculada a partir do vencimento atual: VIGENTE (acima de 180 dias), ALERTA 180 DIAS (até 180), CRÍTICO 60 DIAS (até 60), VENCIDO ou SEM DATA."><span class="hint-mark" aria-hidden="true">i</span></span></th>
+                  <th>Início<span class="hint" tabindex="0" role="note" aria-label="Ano institucional de início da vigência (coincide com o ano do número de identificação)." title="Ano institucional de início da vigência (coincide com o ano do número de identificação)."><span class="hint-mark" aria-hidden="true">i</span></span></th>
+                  <th>Vencimento<br>atual<span class="hint" tabindex="0" role="note" aria-label="Encerramento efetivo, já considerando a última prorrogação válida por aditivo. Pode ser posterior ao término previsto no instrumento original." title="Encerramento efetivo, já considerando a última prorrogação válida por aditivo. Pode ser posterior ao término previsto no instrumento original."><span class="hint-mark" aria-hidden="true">i</span></span></th>
                   <th>Aditivos</th>
                   <th>Processo</th>
                   <th>Detalhes</th>
@@ -1367,9 +1374,9 @@
                     <th>Instituição</th>
                     <th>Diretoria</th>
                     <th>Gerência</th>
-                    <th>Status</th>
-                    <th>Início</th>
-                    <th>Vencimento<br>atual</th>
+                    <th>Status<span class="hint" tabindex="0" role="note" aria-label="Situação calculada a partir do vencimento atual: VIGENTE (acima de 180 dias), ALERTA 180 DIAS (até 180), CRÍTICO 60 DIAS (até 60), VENCIDO ou SEM DATA." title="Situação calculada a partir do vencimento atual: VIGENTE (acima de 180 dias), ALERTA 180 DIAS (até 180), CRÍTICO 60 DIAS (até 60), VENCIDO ou SEM DATA."><span class="hint-mark" aria-hidden="true">i</span></span></th>
+                    <th>Início<span class="hint" tabindex="0" role="note" aria-label="Ano institucional de início da vigência (coincide com o ano do número de identificação)." title="Ano institucional de início da vigência (coincide com o ano do número de identificação)."><span class="hint-mark" aria-hidden="true">i</span></span></th>
+                    <th>Vencimento<br>atual<span class="hint" tabindex="0" role="note" aria-label="Encerramento efetivo, já considerando a última prorrogação válida por aditivo. Pode ser posterior ao término previsto no instrumento original." title="Encerramento efetivo, já considerando a última prorrogação válida por aditivo. Pode ser posterior ao término previsto no instrumento original."><span class="hint-mark" aria-hidden="true">i</span></span></th>
                     <th>Aditivos</th>
                     <th>Processo</th>
                     <th>Detalhes</th>
