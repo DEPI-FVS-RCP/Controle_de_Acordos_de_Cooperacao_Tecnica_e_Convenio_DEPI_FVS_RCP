@@ -351,7 +351,7 @@
        de leitor de tela — o texto vai em aria-label; o balão é apenas o reforço visual. */
     .hint {
       position: relative; display: inline-flex; align-items: center;
-      vertical-align: middle; margin-left: 5px; cursor: help;
+      vertical-align: middle; margin-left: 5px; cursor: pointer;
     }
     .hint-mark {
       display: inline-flex; align-items: center; justify-content: center;
@@ -364,30 +364,52 @@
     .hint:hover .hint-mark { border-color: #3b6ea5; color: #3b6ea5; }
     .hint:focus { outline: none; }
     .hint:focus .hint-mark { border-color: #3b6ea5; color: #3b6ea5; box-shadow: var(--focus-ring); }
-    .hint-bubble {
-      position: absolute; bottom: calc(100% + 7px); left: 50%;
-      transform: translateX(-50%) translateY(4px);
-      background: #1e293b; color: #fff;
-      font-size: 11px; font-weight: 500; line-height: 1.35;
-      font-family: var(--font-family-base); text-align: left; white-space: normal;
-      width: max-content; max-width: 230px;
-      padding: 7px 9px; border-radius: 7px;
-      box-shadow: 0 8px 24px rgba(15,23,42,.20);
-      opacity: 0; visibility: hidden; pointer-events: none; z-index: 40;
-      transition: opacity var(--transition-fast), transform var(--transition-fast);
+    /* (O antigo balão .hint-bubble de hover foi removido em 2026-09-28: só abria no
+       hover e era cortado pelo overflow das tabelas.) */
+    /* Modal informativo por CLIQUE dos ⓘ (formato aprovado 2026-09-28): janela
+       centralizada com título, botão de fechar (×) e texto em parágrafo, sobre um
+       backdrop escurecido. Anexado ao <body> (fora de qualquer overflow), aberto por
+       JS (initHintModal). O texto vem do aria-label do ⓘ e o título do data-hint-title
+       — nada é escondido de leitor de tela (role="dialog", aria-modal). */
+    .hint-overlay {
+      position: fixed; inset: 0; z-index: 9999;
+      display: flex; align-items: center; justify-content: center; padding: 20px;
+      background: rgba(15,23,42,.45);
+      opacity: 0; visibility: hidden;
+      transition: opacity var(--transition-fast), visibility var(--transition-fast);
     }
-    .hint-bubble::after {
-      content: ""; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
-      border: 5px solid transparent; border-top-color: #1e293b;
+    .hint-overlay.is-open { opacity: 1; visibility: visible; }
+    .hint-modal {
+      position: relative; background: #fff; color: #334155;
+      font-family: var(--font-family-base);
+      width: 100%; max-width: 560px; max-height: 85vh; overflow-y: auto;
+      border-radius: 14px; padding: 26px 30px 28px;
+      box-shadow: 0 24px 60px rgba(15,23,42,.30);
+      transform: translateY(8px) scale(.985);
+      transition: transform var(--transition-fast);
     }
-    .hint:hover .hint-bubble,
-    .hint:focus .hint-bubble,
-    .hint:focus-within .hint-bubble {
-      opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0);
+    .hint-overlay.is-open .hint-modal { transform: translateY(0) scale(1); }
+    .hint-modal-title {
+      margin: 0 34px 14px 0; padding: 0;
+      color: #1f8a5b; font-size: 19px; font-weight: 700; line-height: 1.25;
     }
-    @media print { .hint-bubble { display: none; } }
+    .hint-modal-body {
+      margin: 0; font-size: 14.5px; line-height: 1.55; color: #334155;
+      text-align: left; white-space: normal;
+    }
+    .hint-modal-close {
+      position: absolute; top: 15px; right: 17px;
+      width: 30px; height: 30px; border: none; background: transparent;
+      color: #94a3b8; font-size: 24px; line-height: 1; cursor: pointer;
+      border-radius: 8px; display: flex; align-items: center; justify-content: center;
+      transition: color var(--transition-fast), background var(--transition-fast);
+    }
+    .hint-modal-close:hover { color: #334155; background: #f1f5f9; }
+    .hint-modal-close:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+    .hint[aria-expanded="true"] .hint-mark { border-color: #3b6ea5; color: #3b6ea5; }
+    @media print { .hint-overlay { display: none !important; } }
     @media (prefers-reduced-motion: reduce) {
-      .hint-bubble { transition: none; }
+      .hint-overlay, .hint-modal { transition: none; }
     }
 
     /* Transição suave entre abas Operacional ↔ Histórico (revisão UX 2026-09-25).
@@ -1345,9 +1367,9 @@
                   <th>Instituição</th>
                   <th>Diretoria</th>
                   <th>Gerência</th>
-                  <th>Status<span class="hint" tabindex="0" role="note" aria-label="Situação calculada a partir do vencimento atual: VIGENTE (acima de 180 dias), ALERTA 180 DIAS (até 180), CRÍTICO 60 DIAS (até 60), VENCIDO ou SEM DATA." title="Situação calculada a partir do vencimento atual: VIGENTE (acima de 180 dias), ALERTA 180 DIAS (até 180), CRÍTICO 60 DIAS (até 60), VENCIDO ou SEM DATA."><span class="hint-mark" aria-hidden="true">i</span></span></th>
-                  <th>Início<span class="hint" tabindex="0" role="note" aria-label="Ano institucional de início da vigência (coincide com o ano do número de identificação)." title="Ano institucional de início da vigência (coincide com o ano do número de identificação)."><span class="hint-mark" aria-hidden="true">i</span></span></th>
-                  <th>Vencimento<br>atual<span class="hint" tabindex="0" role="note" aria-label="Encerramento efetivo, já considerando a última prorrogação válida por aditivo. Pode ser posterior ao término previsto no instrumento original." title="Encerramento efetivo, já considerando a última prorrogação válida por aditivo. Pode ser posterior ao término previsto no instrumento original."><span class="hint-mark" aria-hidden="true">i</span></span></th>
+                  <th>Status<span class="hint" tabindex="0" role="button" aria-expanded="false" data-hint-title="Status do instrumento" aria-label="Situação calculada a partir do vencimento atual: VIGENTE (acima de 180 dias), ALERTA 180 DIAS (até 180), CRÍTICO 60 DIAS (até 60), VENCIDO ou SEM DATA."><span class="hint-mark" aria-hidden="true">i</span></span></th>
+                  <th>Início<span class="hint" tabindex="0" role="button" aria-expanded="false" data-hint-title="Início da vigência" aria-label="Ano institucional de início da vigência (coincide com o ano do número de identificação)."><span class="hint-mark" aria-hidden="true">i</span></span></th>
+                  <th>Vencimento<br>atual<span class="hint" tabindex="0" role="button" aria-expanded="false" data-hint-title="Vencimento atual" aria-label="Encerramento efetivo, já considerando a última prorrogação válida por aditivo. Pode ser posterior ao término previsto no instrumento original."><span class="hint-mark" aria-hidden="true">i</span></span></th>
                   <th>Aditivos</th>
                   <th>Processo</th>
                   <th>Detalhes</th>
@@ -1374,9 +1396,9 @@
                     <th>Instituição</th>
                     <th>Diretoria</th>
                     <th>Gerência</th>
-                    <th>Status<span class="hint" tabindex="0" role="note" aria-label="Situação calculada a partir do vencimento atual: VIGENTE (acima de 180 dias), ALERTA 180 DIAS (até 180), CRÍTICO 60 DIAS (até 60), VENCIDO ou SEM DATA." title="Situação calculada a partir do vencimento atual: VIGENTE (acima de 180 dias), ALERTA 180 DIAS (até 180), CRÍTICO 60 DIAS (até 60), VENCIDO ou SEM DATA."><span class="hint-mark" aria-hidden="true">i</span></span></th>
-                    <th>Início<span class="hint" tabindex="0" role="note" aria-label="Ano institucional de início da vigência (coincide com o ano do número de identificação)." title="Ano institucional de início da vigência (coincide com o ano do número de identificação)."><span class="hint-mark" aria-hidden="true">i</span></span></th>
-                    <th>Vencimento<br>atual<span class="hint" tabindex="0" role="note" aria-label="Encerramento efetivo, já considerando a última prorrogação válida por aditivo. Pode ser posterior ao término previsto no instrumento original." title="Encerramento efetivo, já considerando a última prorrogação válida por aditivo. Pode ser posterior ao término previsto no instrumento original."><span class="hint-mark" aria-hidden="true">i</span></span></th>
+                    <th>Status<span class="hint" tabindex="0" role="button" aria-expanded="false" data-hint-title="Status do instrumento" aria-label="Situação calculada a partir do vencimento atual: VIGENTE (acima de 180 dias), ALERTA 180 DIAS (até 180), CRÍTICO 60 DIAS (até 60), VENCIDO ou SEM DATA."><span class="hint-mark" aria-hidden="true">i</span></span></th>
+                    <th>Início<span class="hint" tabindex="0" role="button" aria-expanded="false" data-hint-title="Início da vigência" aria-label="Ano institucional de início da vigência (coincide com o ano do número de identificação)."><span class="hint-mark" aria-hidden="true">i</span></span></th>
+                    <th>Vencimento<br>atual<span class="hint" tabindex="0" role="button" aria-expanded="false" data-hint-title="Vencimento atual" aria-label="Encerramento efetivo, já considerando a última prorrogação válida por aditivo. Pode ser posterior ao término previsto no instrumento original."><span class="hint-mark" aria-hidden="true">i</span></span></th>
                     <th>Aditivos</th>
                     <th>Processo</th>
                     <th>Detalhes</th>
@@ -1695,14 +1717,18 @@
     // (leitor de tela lê tudo) e, fora de contêiner com overflow, também num balão visual.
     // opts.nativeTip=true usa o title nativo em vez do balão CSS — necessário dentro da
     // tabela, cujo overflow recortaria um balão absoluto; visualmente é o mesmo ⓘ.
+    // Marca ⓘ acionável por CLIQUE (correção 2026-09-28). O texto informativo
+    // vai em aria-label e é exibido por initHintPopover num popover fixo no <body>
+    // (não é mais o balão CSS de hover, que ficava cortado pelo overflow das tabelas
+    // e não abria no clique). O parâmetro `opts` é aceito por compatibilidade com
+    // chamadas antigas (ex.: {nativeTip:true}), mas não altera mais o comportamento.
     function hint(text, opts) {
       opts = opts || {};
       const t = escapeHTML(String(text || ""));
       if (!t) return "";
-      const nativeTitle = opts.nativeTip ? ` title="${t}"` : "";
-      const bubble = opts.nativeTip ? "" : `<span class="hint-bubble" role="tooltip">${t}</span>`;
-      return `<span class="hint" tabindex="0" role="note" aria-label="${t}"${nativeTitle}>`
-           + `<span class="hint-mark" aria-hidden="true">i</span>${bubble}</span>`;
+      const titleAttr = opts.title ? ` data-hint-title="${escapeHTML(String(opts.title))}"` : "";
+      return `<span class="hint" tabindex="0" role="button" aria-expanded="false" aria-label="${t}"${titleAttr}>`
+           + `<span class="hint-mark" aria-hidden="true">i</span></span>`;
     }
 
     function getUF(r) {
@@ -1955,7 +1981,7 @@
         const vigentePorAditivo = isVigentePorAditivo(r, aditivosPorInstrumento);
         const statCell = stat === "SEM DATA"
           ? `<span class="badge-semdata">SEM DATA</span>`
-          : `${escapeHTML(statDisplay || "—")}${vigentePorAditivo ? hint("Vigência garantida por aditivo: o término efetivo é posterior ao término original do instrumento.", {nativeTip:true}) : ""}`;
+          : `${escapeHTML(statDisplay || "—")}${vigentePorAditivo ? hint("Vigência garantida por aditivo: o término efetivo é posterior ao término original do instrumento.", {title:"Vigência por aditivo"}) : ""}`;
         const diretoria = getFirst(r, CAMPOS.diretoria);
         const gerencia  = getFirst(r, CAMPOS.gerencia);
 
@@ -2415,7 +2441,7 @@
             : String(entry.year);
           const semAssinaturaHint = entry.assinaturaConhecida
             ? ""
-            : hint("Assinatura não registrada — ano baseado no início da vigência.");
+            : hint("Assinatura não registrada — ano baseado no início da vigência.", {title:"Formalização estimada"});
           return `
             <div class="hist-list-item">
               <div class="hist-list-date">${dataCell}</div>
@@ -2913,7 +2939,7 @@
         const assinaturaInfo = historical
           ? (historical.assinaturaConhecida
               ? `<p class="explore-caption">Assinatura: ${escapeHTML(formatDateBR(historical.date))}</p>`
-              : `<p class="explore-caption">Formalização: ano ${escapeHTML(String(historical.year))}${hint("Assinatura não registrada — ano baseado no início da vigência.", {nativeTip:true})}</p>`)
+              : `<p class="explore-caption">Formalização: ano ${escapeHTML(String(historical.year))}${hint("Assinatura não registrada — ano baseado no início da vigência.", {title:"Formalização estimada"})}</p>`)
           : "";
         const docUrl = String(getFirst(r, CAMPOS.documentoUrl) || "").trim();
         return `<article class="drawer-record">
@@ -3478,6 +3504,96 @@
       console.error("[INIT] ERRO:", err);
       alert("Erro ao carregar o CSV. Abra o Console (F12) para ver o detalhe.");
     });
+
+    /* HINT-POPOVER-START
+       Modal informativo por CLIQUE para as marcas ⓘ (.hint) — formato aprovado 2026-09-28.
+       Substitui o antigo balão/popover: agora uma janela centralizada (título + botão
+       fechar + texto), sobre backdrop escurecido, anexada ao <body> (fora de qualquer
+       overflow das tabelas). Delegação no document → cobre as ⓘ estáticas (cabeçalhos) e
+       as dinâmicas (linhas "POR ADITIVO", gaveta, histórico) com um só handler. O texto
+       vem do aria-label do ⓘ e o título do atributo data-hint-title; nada é escondido de
+       leitor de tela (role="dialog", aria-modal, foco no botão fechar, Escape fecha). */
+    (function initHintModal() {
+      let overlay = null, modal = null, titleEl = null, bodyEl = null, closeBtn = null;
+      let current = null, lastFocus = null, prevOverflow = "";
+
+      function build() {
+        if (overlay) return;
+        overlay = document.createElement("div");
+        overlay.className = "hint-overlay";
+        overlay.setAttribute("role", "presentation");
+        modal = document.createElement("div");
+        modal.className = "hint-modal";
+        modal.setAttribute("role", "dialog");
+        modal.setAttribute("aria-modal", "true");
+        modal.setAttribute("aria-labelledby", "hintModalTitle");
+        closeBtn = document.createElement("button");
+        closeBtn.type = "button";
+        closeBtn.className = "hint-modal-close";
+        closeBtn.setAttribute("aria-label", "Fechar");
+        closeBtn.innerHTML = "&times;";
+        titleEl = document.createElement("h3");
+        titleEl.className = "hint-modal-title";
+        titleEl.id = "hintModalTitle";
+        bodyEl = document.createElement("p");
+        bodyEl.className = "hint-modal-body";
+        modal.appendChild(closeBtn);
+        modal.appendChild(titleEl);
+        modal.appendChild(bodyEl);
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+        closeBtn.addEventListener("click", close);
+        // clique no backdrop (fora do modal) fecha
+        overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
+      }
+
+      function open(hintEl) {
+        const text = hintEl.getAttribute("aria-label") || "";
+        if (!text) return;
+        build();
+        titleEl.textContent = hintEl.getAttribute("data-hint-title") || "Informação";
+        bodyEl.textContent = text;
+        current = hintEl;
+        lastFocus = hintEl;
+        hintEl.setAttribute("aria-expanded", "true");
+        overlay.classList.add("is-open");
+        prevOverflow = document.body.style.overflow;
+        document.body.style.overflow = "hidden";   // trava rolagem atrás do modal
+        closeBtn.focus();                            // foco acessível dentro do modal
+      }
+
+      function close() {
+        if (!overlay || !current) return;
+        overlay.classList.remove("is-open");
+        current.setAttribute("aria-expanded", "false");
+        document.body.style.overflow = prevOverflow;
+        if (lastFocus && typeof lastFocus.focus === "function") lastFocus.focus();
+        current = null;
+      }
+
+      function activate(hintEl) {
+        if (current === hintEl) { close(); return; }
+        close();
+        open(hintEl);
+      }
+
+      // Clique numa marca ⓘ abre o modal.
+      document.addEventListener("click", (ev) => {
+        const h = ev.target.closest ? ev.target.closest(".hint") : null;
+        if (h) { ev.preventDefault(); ev.stopPropagation(); activate(h); }
+      });
+
+      // Teclado: Enter/Espaço ativam a ⓘ; Escape fecha o modal.
+      document.addEventListener("keydown", (ev) => {
+        if (ev.key === "Escape" && current) { ev.preventDefault(); close(); return; }
+        if (current && ev.key === "Tab") { ev.preventDefault(); closeBtn.focus(); return; }
+        if (ev.key === "Enter" || ev.key === " " || ev.key === "Spacebar") {
+          const h = ev.target.closest ? ev.target.closest(".hint") : null;
+          if (h) { ev.preventDefault(); activate(h); }
+        }
+      });
+    })();
+    /* HINT-POPOVER-END */
   </script>
 
 
