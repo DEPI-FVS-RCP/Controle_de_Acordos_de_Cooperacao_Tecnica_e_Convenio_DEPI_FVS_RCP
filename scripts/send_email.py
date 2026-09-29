@@ -4,6 +4,7 @@
 import os
 import json
 import smtplib
+from datetime import datetime
 from email.message import EmailMessage
 from pathlib import Path
 
@@ -59,7 +60,12 @@ def main() -> None:
 
     resumo = json.loads(RESUMO.read_text(encoding="utf-8"))
 
-    data_exec = (resumo.get("data_execucao", "") or "").strip() or "N/D"
+    data_exec_raw = (resumo.get("data_execucao", "") or "").strip()
+    # Exibe a data no padrão brasileiro (DD/MM/AAAA); mantém o valor original se não for ISO
+    try:
+        data_exec = datetime.fromisoformat(data_exec_raw[:10]).strftime("%d/%m/%Y")
+    except Exception:
+        data_exec = data_exec_raw or "N/D"
 
     # ✅ Compatível com o monitor_act.py (novo formato)
     faixas = (resumo.get("faixas") or {})
