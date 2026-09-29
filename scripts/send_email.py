@@ -43,7 +43,7 @@ def main() -> None:
     # SMTP (GitHub Actions)
     smtp_host = os.getenv("SMTP_HOST", "smtp.gmail.com").strip()
     smtp_port = int(os.getenv("SMTP_PORT", "587").strip())
-    site_url = os.getenv("SITE_URL", "").strip()
+    site_url  = os.getenv("SITE_URL", "").strip()
 
     smtp_user = must_env("SMTP_USER")
     smtp_pass = must_env("SMTP_PASS")
@@ -60,8 +60,14 @@ def main() -> None:
     resumo = json.loads(RESUMO.read_text(encoding="utf-8"))
 
     data_exec = (resumo.get("data_execucao", "") or "").strip() or "N/D"
-    faixas = resumo.get("faixas") or {}
 
+    # ✅ Compatível com o monitor_act.py (novo formato)
+    faixas = (resumo.get("faixas") or {})
+
+    # LÓGICA (60/180):
+    # - confortável: >180d
+    # - alerta: 61–180d
+    # - crítico: ≤60d
     confort = parse_int(faixas, "confortavel_acima_180", 0)
     alerta180 = parse_int(faixas, "atencao_61_180", 0)
     crit60 = parse_int(faixas, "critica_ate_60", 0)
@@ -73,6 +79,7 @@ def main() -> None:
     ignorados = int(resumo.get("ignorados_arquivados", 0) or 0)
     concluidos = int(resumo.get("concluidos", 0) or 0)
 
+    # Assunto executivo (só 180/60)
     subject = (
         "Monitoramento Mensal de Acordos de Cooperação Técnica (ACT’s) / Convênios / Termos de Cooperação (TC) — "
         f"{data_exec} | 180d:{alerta180} • 60d:{crit60}"
@@ -81,58 +88,35 @@ def main() -> None:
     linhas = []
     linhas.append(f"Data de referência: {data_exec}")
     linhas.append("")
+    linhas.append("Panorama mensal da vigência dos instrumentos:")
+    linhas.append("")
     linhas.append(
-        "Em cumprimento à rotina de monitoramento da vigência dos instrumentos, "
-        "apresenta-se o panorama consolidado a seguir:"
+        f"BASE (sem arquivados): {total_base} instrumentos | "
+        f"Concluídos: {concluidos} | Arquivados ignorados: {ignorados}"
     )
     linhas.append("")
-    linhas.append("BASE (sem arquivados):")
-    linhas.append(f"- Total na base do painel: {total_base}")
-    linhas.append(f"- Concluídos (marcados em status_execucao): {concluidos}")
-    linhas.append(f"- Ignorados (arquivados): {ignorados}")
-    linhas.append("")
-    linhas.append("SITUAÇÃO DOS PRAZOS DE VIGÊNCIA (janelas de 60 e 180 dias):")
-    linhas.append(
-        f"{fmt_bolinha('verde')} Instrumentos em situação confortável (vigência superior a 180 dias / superior a 6 meses): {confort}"
-    )
-    linhas.append(
-        f"{fmt_bolinha('amarelo')} Instrumentos em alerta de atenção (vigência entre 61 e 180 dias / dentro dos próximos 6 meses): {alerta180}"
-    )
-    linhas.append(
-        f"{fmt_bolinha('vermelho')} Instrumentos em situação crítica (vigência até 60 dias / até 2 meses): {crit60}"
-    )
+    linhas.append("PRAZOS DE VIGÊNCIA (janelas de 60 e 180 dias):")
+    linhas.append(f"{fmt_bolinha('verde')} Confortável (acima de 180 dias): {confort}")
+    linhas.append(f"{fmt_bolinha('amarelo')} Atenção (61 a 180 dias): {alerta180}")
+    linhas.append(f"{fmt_bolinha('vermelho')} Crítico (até 60 dias): {crit60}")
 
     if vencido:
-        linhas.append(f"{fmt_bolinha('vermelho')} Instrumentos com vigência expirada: {vencido}")
+        linhas.append(f"Vigência expirada: {vencido}")
     if sem_data:
-        linhas.append(f"{fmt_bolinha('cinza')} Instrumentos sem registro válido de vigência: {sem_data}")
+        linhas.append(f"{fmt_bolinha('cinza')} Sem registro válido de vigência: {sem_data}")
 
     linhas.append("")
     linhas.append(
-        "Os prazos acima são recalculados automaticamente a cada execução do sistema, com base na data corrente."
-    )
-    linhas.append(
-        "Recomenda-se que os instrumentos enquadrados nas faixas de alerta sejam avaliados quanto à necessidade de "
-        "prorrogação, renovação ou adoção das providências administrativas cabíveis."
+        "Recomenda-se avaliar os instrumentos em alerta quanto à prorrogação, renovação ou "
+        "providências cabíveis. Prazos recalculados automaticamente a cada execução."
     )
     linhas.append("")
-    linhas.append(
-        "Observação metodológica: este relatório adota classificação por janelas de 60 e 180 dias para apoiar o acompanhamento mensal. "
-        "O Painel Eletrônico, por sua vez, utiliza categorização por faixas anuais para facilitar a visão macro da base ativa."
-    )
-    linhas.append("")
-    linhas.append(
-        "Recomenda-se o acompanhamento contínuo do Painel Eletrônico de Monitoramento dos Acordos de Cooperação Técnica (ACT’s), "
-        "Termos de Colaboração (TC) e Convênios, mediante acesso direto pelo link abaixo, o qual constitui a fonte regularmente atualizada "
-        "das informações de vigência. Para consulta, basta acessar:"
-    )
-
+    linhas.append("Painel Eletrônico (fonte atualizada de vigência):")
     if site_url:
         linhas.append(site_url)
-        linhas.append("Senha de acesso ao painel: depi2026")
     else:
         linhas.append("(URL do painel não configurada — defina o secret SITE_URL no repositório GitHub)")
-
+    linhas.append("Senha de acesso ao painel: depi2026")
     linhas.append("")
     linhas.append("Relatório gerado automaticamente pelo sistema de monitoramento.")
 
