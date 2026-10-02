@@ -85,29 +85,26 @@ def main() -> None:
     ignorados = int(resumo.get("ignorados_arquivados", 0) or 0)
     concluidos = int(resumo.get("concluidos", 0) or 0)
 
-    # Assunto executivo (só 180/60)
-    subject = (
-        "Monitoramento Mensal de Acordos de Cooperação Técnica (ACT’s) / Convênios / Termos de Cooperação (TC) — "
-        f"{data_exec} | 180d:{alerta180} • 60d:{crit60}"
-    )
+    # Assunto executivo
+    subject = f"Monitoramento Mensal de Instrumentos — {data_exec}"
 
     linhas = []
     linhas.append(f"Data de referência: {data_exec}")
     linhas.append("")
     linhas.append("Panorama mensal da vigência dos instrumentos:")
     linhas.append("")
+    # "Concluídos" segue o critério do painel (vigência vencida = faixa "vencido"),
+    # não o campo status_execucao. Ver memory/automacao_email.md.
+    concluidos_painel = vencido
     linhas.append(
-        f"BASE (sem arquivados): {total_base} instrumentos | "
-        f"Concluídos: {concluidos} | Arquivados ignorados: {ignorados}"
+        f"BASE: {total_base} instrumentos | Concluídos: {concluidos_painel}"
     )
     linhas.append("")
-    linhas.append("PRAZOS DE VIGÊNCIA (janelas de 60 e 180 dias):")
+    linhas.append("PRAZOS DE VIGÊNCIA DOS INSTRUMENTOS ATIVOS (janelas de 60 e 180 dias):")
     linhas.append(f"{fmt_bolinha('verde')} Confortável (acima de 180 dias): {confort}")
     linhas.append(f"{fmt_bolinha('amarelo')} Atenção (61 a 180 dias): {alerta180}")
     linhas.append(f"{fmt_bolinha('vermelho')} Crítico (até 60 dias): {crit60}")
 
-    if vencido:
-        linhas.append(f"Vigência expirada: {vencido}")
     if sem_data:
         linhas.append(f"{fmt_bolinha('cinza')} Sem registro válido de vigência: {sem_data}")
 
@@ -124,7 +121,7 @@ def main() -> None:
         linhas.append("(URL do painel não configurada — defina o secret SITE_URL no repositório GitHub)")
     linhas.append("Senha de acesso ao painel: depi2026")
     linhas.append("")
-    linhas.append("Relatório gerado automaticamente pelo sistema de monitoramento.")
+    linhas.append("Atenciosamente,")
 
     body = "\n".join(linhas)
 
