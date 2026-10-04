@@ -85,20 +85,26 @@ def main() -> None:
     ignorados = int(resumo.get("ignorados_arquivados", 0) or 0)
     concluidos = int(resumo.get("concluidos", 0) or 0)
 
+    # Categorias espelhadas do painel (monitor_act.py grava ambas no JSON).
+    # Fallback: se o JSON for antigo (sem esses campos), deriva do que existe.
+    vigentes = int(resumo.get("vigentes", total_base - vencido) or 0)
+    vigentes_por_aditivo = int(resumo.get("vigentes_por_aditivo", 0) or 0)
+
     # Assunto executivo
     subject = f"Monitoramento Mensal de Instrumentos — {data_exec}"
+
+    # "Concluídos" segue o critério do painel (vigência vencida = faixa "vencido"),
+    # não o campo status_execucao. Ver memory/automacao_email.md.
+    concluidos_painel = vencido
 
     linhas = []
     linhas.append(f"Data de referência: {data_exec}")
     linhas.append("")
-    linhas.append("Panorama mensal da vigência dos instrumentos:")
+    linhas.append("Panorama institucional (espelha o Painel Farol):")
     linhas.append("")
-    # "Concluídos" segue o critério do painel (vigência vencida = faixa "vencido"),
-    # não o campo status_execucao. Ver memory/automacao_email.md.
-    concluidos_painel = vencido
-    linhas.append(
-        f"BASE: {total_base} instrumentos | Concluídos: {concluidos_painel}"
-    )
+    linhas.append(f"Vigentes: {vigentes} (destes, {vigentes_por_aditivo} vigentes por aditivo)")
+    linhas.append(f"Concluídos (vigência encerrada): {concluidos_painel}")
+    linhas.append(f"Total de instrumentos: {total_base}")
     linhas.append("")
     linhas.append("PRAZOS DE VIGÊNCIA DOS INSTRUMENTOS ATIVOS (janelas de 60 e 180 dias):")
     linhas.append(f"{fmt_bolinha('verde')} Confortável (acima de 180 dias): {confort}")
@@ -114,7 +120,7 @@ def main() -> None:
         "providências cabíveis. Prazos recalculados automaticamente a cada execução."
     )
     linhas.append("")
-    linhas.append("Painel Eletrônico (fonte atualizada de vigência):")
+    linhas.append("Painel Farol (fonte atualizada de vigência):")
     if site_url:
         linhas.append(site_url)
     else:

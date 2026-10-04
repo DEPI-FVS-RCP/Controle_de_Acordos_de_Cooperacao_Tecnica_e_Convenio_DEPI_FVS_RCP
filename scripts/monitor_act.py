@@ -11,6 +11,7 @@ from typing import Dict, List, Optional, Tuple
 ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "data"
 CSV_IN = DATA_DIR / "tbl_instrumentos.csv"
+CSV_ADITIVOS = DATA_DIR / "tbl_aditivos.csv"
 OUT_LOG = DATA_DIR / "resumo_execucao.json"
 
 # (opcional) se você quiser manter arquivos de apoio internos:
@@ -27,6 +28,11 @@ DATE_COLS_END = ["vigencia_termino", "VIGÊNCIA - TÉRMINO", "vencimento", "Venc
 DATE_COLS_START = ["vigencia_inicio", "VIGÊNCIA - INÍCIO", "inicio", "Inicio", "vigência_início"]
 
 ID_COLS = ["identificacao", "Identificação", "identificação", "numero", "número", "instrumento", "Instrumento"]
+
+# Chave de relação instrumento <-> aditivo (espelha CAMPOS.idRelacao do painel)
+ID_INSTR_COLS = ["id_instrumento", "ID_INSTRUMENTO", "id"]
+# Nova vigência do aditivo (em tbl_aditivos.csv)
+ADITIVO_TERMINO_NOVA_COLS = ["vigencia_termino_nova", "vigência_término_nova", "vigencia_termino_novo"]
 
 def norm(s: str) -> str:
     return (s or "").strip()
@@ -115,6 +121,20 @@ def main() -> int:
 
     rows, headers, delim = read_csv_any_delim(CSV_IN)
 
+    # Aditivos agrupados por id_instrumento (para "vigente por aditivo").
+    # Espelha isVigentePorAditivo() do index.html. Se o arquivo faltar, segue
+    # sem quebrar (vigentes_por_aditivo = 0), tal como o painel usa fallback.
+    grouped_aditivos: Dict[str, List[Dict[str, str]]] = {}
+    if CSV_ADITIVOS.exists():
+        try:
+            adit_rows, _, _ = read_csv_any_delim(CSV_ADITIVOS)
+            for a in adit_rows:
+                key = norm(first(a, ID_INSTR_COLS))
+                if key:
+                    grouped_aditivos.setdefault(key, []).append(a)
+        except Exception as e:
+            print(f"[AVISO] Falha ao ler {CSV_ADITIVOS}: {e}", file=sys.stderr)
+
     total_base = 0
     ignorados_arquivados = 0
     concluidos = 0
@@ -125,6 +145,12 @@ def main() -> int:
     critica_ate_60 = 0          # 🔴
     sem_data = 0
     vencido = 0
+
+    # Categorias espelhadas do painel:
+    # - vigentes = base (não arquivados) e NÃO concluídos (vigência não vencida)
+    # - vigentes_por_aditivo = subconjunto dos vigentes cujo término atual
+    #   coincide com a nova vigência de algum aditivo (marca "POR ADITIVO")
+    vigentes_por_aditivo = 0
 
     min_dias: Optional[int] = None
     min_id: str = "Identificação não informada"
@@ -146,6 +172,7 @@ def main() -> int:
         dias = days_to(fim, today)
 
         ident = norm(first(r, ID_COLS)) or "Identificação não informada"
+        id_instr = norm(first(r, ID_INSTR_COLS))
 
         if dias is None:
             sem_data += 1
@@ -159,6 +186,14 @@ def main() -> int:
             vencido += 1
             continue
 
+        # "Vigente por aditivo" (só instrumentos ativos, com data válida):
+        # término atual coincide com a nova vigência de algum aditivo do mesmo id.
+        if id_instr and fim:
+            for a in grouped_aditivos.get(id_instr, []):
+                if parse_date_any(first(a, ADITIVO_TERMINO_NOVA_COLS)) == fim:
+                    vigentes_por_aditivo += 1
+                    break
+
         # classificação conforme seu modelo
         if dias <= PRAZO_CRITICO_DIAS:
             critica_ate_60 += 1
@@ -169,12 +204,18 @@ def main() -> int:
         else:
             confortavel_acima_180 += 1
 
+    # Vigentes = base (não arquivados) menos os de vigência vencida (concluídos).
+    # Mesmo critério do painel (summarizeRows: ativos = base.filter(!isConcluido)).
+    vigentes = total_base - vencido
+
     # salva um resumo “contratual” (o e-mail depende disso)
     resumo = {
         "data_execucao": today.isoformat(),
         "total_base_painel": total_base,
         "ignorados_arquivados": ignorados_arquivados,
         "concluidos": concluidos,
+        "vigentes": vigentes,
+        "vigentes_por_aditivo": vigentes_por_aditivo,
         "faixas": {
             "confortavel_acima_180": confortavel_acima_180,
             "atencao_61_180": atencao_61_180,
