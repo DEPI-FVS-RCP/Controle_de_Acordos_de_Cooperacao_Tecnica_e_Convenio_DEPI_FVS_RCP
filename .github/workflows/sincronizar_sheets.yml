@@ -1,0 +1,98 @@
+name: Sincronizar FAROL com Google Sheets
+
+on:
+  schedule:
+    # A cada 15 min; horários fora do início da hora reduzem atrasos de fila.
+    - cron: "7,22,37,52 * * * *"
+  workflow_dispatch:
+  push:
+
+concurrency:
+  group: farol-pages
+  cancel-in-progress: false
+
+jobs:
+  preparar:
+    if: github.ref_name == github.event.repository.default_branch
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    outputs:
+      publicar: ${{ steps.decisao.outputs.publicar }}
+    env:
+      FAROL_INSTRUMENTOS_CSV_URL: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTDs_FPcKQeqOW9skeAtrB25c5TgiznR_d4l6yAmM_qfWXyW5LGsbC284ZL2GARF1TorG0XinfXhZSh/pub?gid=1283277036&single=true&output=csv"
+      FAROL_ADITIVOS_CSV_URL: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTDs_FPcKQeqOW9skeAtrB25c5TgiznR_d4l6yAmM_qfWXyW5LGsbC284ZL2GARF1TorG0XinfXhZSh/pub?gid=1295732612&single=true&output=csv"
+      FAROL_INSTITUICOES_CSV_URL: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTDs_FPcKQeqOW9skeAtrB25c5TgiznR_d4l6yAmM_qfWXyW5LGsbC284ZL2GARF1TorG0XinfXhZSh/pub?gid=1773093257&single=true&output=csv"
+    steps:
+      - name: Baixar repositório
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Preparar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Testar sincronizador
+        run: python -m unittest discover -s _migracao/tests -p 'test_sync_sheets_csv.py' -v
+
+      - name: Sincronizar e validar os três CSVs
+        if: github.event_name != 'push'
+        run: python _migracao/sync_sheets_csv.py
+
+      - name: Conferir regressão do painel
+        run: node _tests/test_farol.mjs
+
+      - name: Gravar CSVs alterados no repositório
+        id: decisao
+        shell: bash
+        run: |
+          if ! git diff --quiet -- data/tbl_instrumentos.csv data/tbl_aditivos.csv data/tbl_instituicoes_geo.csv; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add data/tbl_instrumentos.csv data/tbl_aditivos.csv data/tbl_instituicoes_geo.csv
+            git commit -m "Atualizar dados do FAROL a partir do Google Sheets"
+            git push origin "HEAD:${{ github.event.repository.default_branch }}"
+            echo "publicar=true" >> "$GITHUB_OUTPUT"
+          elif [ "$GITHUB_EVENT_NAME" = "push" ] || [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            echo "publicar=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "publicar=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Preparar somente arquivos públicos do painel
+        if: steps.decisao.outputs.publicar == 'true'
+        run: |
+          mkdir -p _site/data
+          cp index.html _site/index.html
+          cp -R assets _site/assets
+          cp data/tbl_instrumentos.csv data/tbl_aditivos.csv data/tbl_instituicoes_geo.csv _site/data/
+          if [ -d documentos ]; then cp -R documentos _site/documentos; fi
+
+      - name: Configurar Pages
+        if: steps.decisao.outputs.publicar == 'true'
+        uses: actions/configure-pages@v5
+
+      - name: Enviar artefato público
+        if: steps.decisao.outputs.publicar == 'true'
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+
+  publicar:
+    if: needs.preparar.outputs.publicar == 'true'
+    needs: preparar
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Publicar painel
+        id: deployment
+        uses: actions/deploy-pages@v4
