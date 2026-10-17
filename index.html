@@ -3305,9 +3305,9 @@
       // Inicializar Leaflet uma única vez
       if (!_leafletMap) {
         _leafletMap = L.map("leaflet-map", { zoomControl: true });
-        L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
-          attribution: "© OpenStreetMap © CARTO",
-          subdomains: "abcd",
+        L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          attribution: "© OpenStreetMap contributors",
+          
           maxZoom: 19
         }).addTo(_leafletMap);
         _leafletMap.setView([-3.1040, -60.0150], 13, {animate: false});
@@ -3471,7 +3471,8 @@
       // Linhas SEM chave são sempre mantidas (não podem ser agrupadas com
       // segurança) e nunca descartadas. Preserva a ordem original.
       // -------------------------------------------------------------
-      (function dedupTbl() {
+      (function dedupTbl() {
+
         const seen = new Set();
         const out = [];
         let removidas = 0;
