@@ -87,7 +87,7 @@ def _validate(name, incoming, current, width):
                 _valid_date(row[col].strip(), name + " linha " + str(line))
         old_ids = _ids(current[1:], name)
         new_ids = _ids(incoming[1:], name)
-        if not old_ids.issubset(new_ids):
+        if name == FILES[0] and not old_ids.issubset(new_ids):
             raise ValueError("ID antigo ausente em " + name)
         if name == FILES[0]:
             for line, row in enumerate(incoming[1:], 2):
