@@ -426,7 +426,7 @@
       overflow:hidden;
       background:#fff;
     }
-    .table-scroll{ width:100%; max-width:100%; overflow-x:auto; container-type:inline-size; }
+    .table-scroll{ width:100%; max-width:100%; overflow-x:visible; }
     .panel-table-header{
       display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:6px;
     }
@@ -456,7 +456,7 @@
     .tbl-concluidos tbody tr:hover{ opacity:1; }
     .tbl{
       width: 100%;
-      min-width:1476px;
+      min-width:0;
       border-collapse: collapse;
       table-layout: fixed;
     }
@@ -506,18 +506,18 @@
 
     .tbl tbody td:nth-child(6){ white-space: normal; }
 
-    /* Larguras legíveis; a rolagem pertence somente à tabela. */
-    .tbl th:nth-child(1), .tbl td:nth-child(1) { width:112px; }
-    .tbl th:nth-child(2), .tbl td:nth-child(2) { width:70px; }
-    .tbl th:nth-child(3), .tbl td:nth-child(3) { width:260px; }
-    .tbl th:nth-child(4), .tbl td:nth-child(4) { width:92px; }
-    .tbl th:nth-child(5), .tbl td:nth-child(5) { width:92px; }
-    .tbl th:nth-child(6), .tbl td:nth-child(6) { width:170px; }
-    .tbl th:nth-child(7), .tbl td:nth-child(7) { width:120px; }
-    .tbl th:nth-child(8), .tbl td:nth-child(8) { width:130px; }
-    .tbl th:nth-child(9), .tbl td:nth-child(9) { width:100px; }
-    .tbl th:nth-child(10), .tbl td:nth-child(10) { width:230px; }
-    .tbl th:nth-child(11), .tbl td:nth-child(11) { width:100px; }
+    /* Todas as colunas, inclusive Ver, cabem na largura disponível. */
+    .tbl th:nth-child(1), .tbl td:nth-child(1) { width:8%; }
+    .tbl th:nth-child(2), .tbl td:nth-child(2) { width:5%; }
+    .tbl th:nth-child(3), .tbl td:nth-child(3) { width:20%; }
+    .tbl th:nth-child(4), .tbl td:nth-child(4) { width:6%; }
+    .tbl th:nth-child(5), .tbl td:nth-child(5) { width:7%; }
+    .tbl th:nth-child(6), .tbl td:nth-child(6) { width:11%; }
+    .tbl th:nth-child(7), .tbl td:nth-child(7) { width:8%; }
+    .tbl th:nth-child(8), .tbl td:nth-child(8) { width:8%; }
+    .tbl th:nth-child(9), .tbl td:nth-child(9) { width:6%; }
+    .tbl th:nth-child(10), .tbl td:nth-child(10) { width:16%; }
+    .tbl th:nth-child(11), .tbl td:nth-child(11) { width:5%; }
     .tbl .js-toggle {
       min-width: 0;
       width: 56px;
@@ -1096,14 +1096,14 @@
     .chart-explore > summary, .section-concluidos > summary, .drawer-record summary { min-height:36px; display:flex; align-items:center; gap:6px; }
     .filter-chip { min-height:36px; }
     .table-order { margin:0; font-size:12px; color:#526174; }
-    .tbl th, .tbl td { padding:12px; }
-    .tbl thead th { text-align:left; white-space:normal; line-height:1.45; letter-spacing:.15px; }
-    .tbl tbody td { text-align:left; }
+    .tbl th, .tbl td { padding:8px 6px; white-space:normal; overflow-wrap:anywhere; }
+    .tbl thead th { font-size:11px; text-align:left; white-space:normal; line-height:1.45; letter-spacing:.15px; }
+    .tbl tbody td { text-align:left; white-space:normal; }
     .tbl thead th:nth-child(2), .tbl tbody td:nth-child(2), .tbl thead th:nth-child(9), .tbl tbody td:nth-child(9) { text-align:center; }
     .tbl tbody td:nth-child(6) { white-space:normal; }
-    .tbl .js-toggle { min-height:40px; width:76px; padding:8px; }
+    .tbl .js-toggle { min-height:40px; width:100%; min-width:0; padding:8px 2px; font-size:12px; }
     .tbl .detailsRow > td { width:auto; white-space:normal; padding:12px; }
-    .detailsBox { box-sizing:border-box; width:min(960px,calc(100cqw - 24px)); padding:16px; line-height:1.55; overflow-wrap:anywhere; }
+    .detailsBox { box-sizing:border-box; width:100%; max-width:none; padding:16px; line-height:1.55; overflow-wrap:anywhere; }
     .detailsBox .details-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:16px; }
     .kv { grid-template-columns:150px minmax(0,1fr); gap:8px 16px; }
     .detailsBox summary { padding:8px 0; }
@@ -1167,6 +1167,18 @@
       .detailsBox .details-heading { flex-wrap:wrap; }
       .footer-autoria-texto { padding:0 42px 0 0; overflow-wrap:anywhere; }
       #local-geo-panel { right:12px; width:calc(100vw - 24px); }
+    }
+    /* Em telas estreitas, cada registro continua completo, sem deslocamento lateral. */
+    @media (max-width:720px) {
+      .table-scroll .tbl, .tbl tbody { display:block; width:100%; }
+      .tbl thead { display:none; }
+      .tbl tbody tr:not(.detailsRow) { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); border-bottom:1px solid var(--border-subtle); }
+      .tbl tbody td { display:block; width:auto !important; min-width:0; padding:10px; border-bottom:0; text-align:left !important; white-space:normal !important; }
+      .tbl tbody td::before { content:attr(data-label); display:block; margin-bottom:4px; font-size:11px; font-weight:600; color:#526174; }
+      .tbl tbody td:nth-child(3), .tbl tbody td:nth-child(10), .tbl tbody td:nth-child(11), .tbl .emptyRow td { grid-column:1 / -1; }
+      .tbl .detailsRow[style*="table-row"] { display:block !important; }
+      .tbl .detailsRow > td { width:100% !important; }
+      .tbl .detailsRow td::before { content:none; }
     }
     @media print {
       .cards-help, .data-feedback, .export-feedback, .details-heading .btn { display:none !important; }
@@ -1429,7 +1441,7 @@
       <div class="row" style="margin-top:14px;">
         <div class="panel">
           <h3>Mapa de parcerias por UF</h3>
-          <p class="filterHint">Selecione uma UF no mapa ou na lista para consultar as localizações.</p>
+          <p class="filterHint">Passe o cursor sobre uma UF para ver as instituições. Você também pode selecionar a UF no mapa ou na lista.</p>
           <div id="chart_map"></div>
         </div>
 
@@ -1477,7 +1489,7 @@
           <button id="btnExportAtivos" class="btn-export" type="button">Baixar CSV</button>
         </div>
         <div id="activeCountLabel" class="filterHint"></div>
-        <p class="table-order">Ordenado por vencimento atual · deslize a tabela para ver todas as colunas.</p>
+        <p class="table-order">Ordenado por vencimento atual.</p>
         <p id="exportFeedback" class="export-feedback" role="status" hidden></p>
 
         <div class="tableWrap">
@@ -1509,7 +1521,7 @@
             <h3>Instrumentos Concluídos</h3>
             <button id="btnExportConcluidos" class="btn-export" type="button">Baixar CSV</button>
           </div>
-          <p class="table-order">Ordenado por vencimento atual · deslize a tabela para ver todas as colunas.</p>
+          <p class="table-order">Ordenado por vencimento atual.</p>
           <div class="tableWrap">
             <div class="table-scroll">
               <table class="tbl tbl-concluidos">
@@ -2118,6 +2130,12 @@
         return;
       }
 
+      const tableLabels = Array.from(targetEl.closest("table").querySelectorAll("thead th")).map(th => {
+        const label = th.cloneNode(true);
+        label.querySelectorAll(".hint").forEach(el => el.remove());
+        label.querySelectorAll("br").forEach(el => el.replaceWith(" "));
+        return label.textContent.trim().replace(/\s+/g, " ");
+      });
       rows.forEach((r) => {
         const ident = getFirst(r, CAMPOS.idDisplay);
         const inst  = getFirst(r, CAMPOS.instituicao);
@@ -2212,6 +2230,7 @@
           <td>${escapeHTML(proc || "—")}</td>
           <td><button class="btn js-toggle" type="button" aria-expanded="false" aria-label="Ver detalhes do instrumento">Ver</button></td>
         `;
+        tr.querySelectorAll("td").forEach((cell, index) => { cell.dataset.label = tableLabels[index]; });
         targetEl.appendChild(tr);
 
         const trDetails = document.createElement("tr");
@@ -2845,6 +2864,17 @@
         bindChartExplore("chart_map","uf",ufs.map(value => ({value,label:value + " — " + (UF_NOMES[value] || value) + " · " + byUF.get(value).ids.size})),filterUFEl.value,p => p.customdata,uf => openGeoPanel(uf));
         chartEl.removeAllListeners("plotly_hover");
         chartEl.removeAllListeners("plotly_unhover");
+        chartEl.on("plotly_hover", evt => {
+          if (document.getElementById("exploreDrawer").open || document.getElementById("operationalCharts").getAttribute("aria-busy") === "true") return;
+          const point = evt?.points?.[0];
+          if (!point) return;
+          const text = String(point.text || "");
+          const uf = String(point.customdata || (text.startsWith("Amazonas") ? "AM" : text.startsWith("Ceará") ? "CE" : (text.match(/^([A-Z]{2})/) || [])[1]) || "");
+          if (!GEO_CONFIG[uf]) return;
+          cancelGeoClose();
+          if (_gUF !== uf || !document.getElementById("local-geo-panel").classList.contains("open")) openGeoPanel(uf, false);
+        });
+        chartEl.on("plotly_unhover", scheduleGeoClose);
         });
       };
 
@@ -3434,6 +3464,7 @@
     let _gUF          = null;   // UF atualmente exibida no painel Leaflet (evita reprocessar ao repetir hover)
     let _gInsts       = [];     // instituições carregadas do CSV geo
     let _geoReturnFocus = null;
+    let _geoCloseTimer = null;
     let _gReady = false;
     let _gFailed = false;
 
@@ -3478,6 +3509,7 @@
     let _leafletMap = null;
 
     function openGeoPanel(uf, focusPanel = true) {
+      cancelGeoClose();
       const cfg = GEO_CONFIG[uf];
       if (!cfg) return;
 
@@ -3563,6 +3595,7 @@
     }
 
     function closeGeoPanel(restoreFocus = true) {
+      cancelGeoClose();
       const panel = document.getElementById("local-geo-panel");
       const wasOpen = panel.classList.contains("open");
       panel.classList.remove("open");
@@ -3572,6 +3605,16 @@
         target?.focus({preventScroll:true});
       }
     }
+    function cancelGeoClose() {
+      if (_geoCloseTimer !== null) clearTimeout(_geoCloseTimer);
+      _geoCloseTimer = null;
+    }
+    function scheduleGeoClose() {
+      cancelGeoClose();
+      _geoCloseTimer = setTimeout(() => closeGeoPanel(false), 200);
+    }
+    document.getElementById("local-geo-panel").addEventListener("mouseenter", cancelGeoClose);
+    document.getElementById("local-geo-panel").addEventListener("mouseleave", scheduleGeoClose);
     document.getElementById("local-geo-panel").addEventListener("keydown", e => {
       if (e.key === "Escape") { e.preventDefault(); closeGeoPanel(); }
     });
