@@ -971,6 +971,9 @@
     .explore-heading h3 { margin:0; font-size:15px; color:#1e3a5f; }
     .explore-actions { display:flex; flex-wrap:wrap; gap:8px; }
     .explore-actions .btn, .command-form .btn { font-size:12px; padding:8px 12px; }
+    .summary-clear-filters { display:inline-flex; align-items:center; justify-content:center; gap:6px; color:#475569; background:#fff; border-color:#cbd5e1; }
+    .summary-clear-filters:hover { color:#1e3a5f; background:#f8fafc; border-color:#94a3b8; }
+    .summary-clear-filters .clear-icon { font-size:16px; line-height:1; font-weight:500; }
     .explore-summary p { margin:10px 0 0; font-size:13px; line-height:1.65; color:#475569; }
     /* Mini-ficha do instrumento (recorte de 1 item) — camada de exploração, só apresentação. */
     .executive-detail { margin:12px 0 0; }
@@ -1160,6 +1163,9 @@
       .logo.fvs { height:auto; width:min(160px,55vw); }
       .logo.depi { height:44px; }
       .brand-text .title { font-size:19px; }
+      .explore-summary .explore-heading { align-items:stretch; }
+      .explore-summary .explore-actions { width:100%; }
+      .explore-summary .explore-actions .btn { flex:1 1 140px; min-height:44px; }
       .filter-chip, .chart-explore > summary, .drawer-record summary { min-height:44px; }
       .hint { min-width:36px; min-height:36px; }
       .btn, .btn-export { min-height:44px; }
@@ -1400,6 +1406,7 @@
         <div class="explore-heading">
           <h3 id="executiveTitle">Resumo do recorte</h3>
           <div class="explore-actions">
+            <button class="btn summary-clear-filters" type="button" id="clearSummaryFilters" aria-label="Limpar todos os filtros ativos"><span class="clear-icon" aria-hidden="true">×</span>Limpar filtros</button>
             <button class="btn" type="button" id="openCurrentRows" aria-haspopup="dialog">Ver instrumentos</button>
           </div>
         </div>
@@ -3186,6 +3193,11 @@
         else if (key === "aditivos") selectExploration("aditivos", key);
         else selectExploration(key === "ativos" || key === "concluidos" ? "scope" : "bucket",key);
       }));
+      document.getElementById("clearSummaryFilters").addEventListener("click", () => {
+        clearOperationalFilters();
+        applyFilters();
+        quickSearchEl.focus({preventScroll:true});
+      });
       document.getElementById("openCurrentRows").addEventListener("click",openCurrentExplorer);
       const dialog = document.getElementById("exploreDrawer");
       document.getElementById("drawerClearFilters").addEventListener("click", () => { clearOperationalFilters(); applyFilters(); document.getElementById("closeDrawer").focus(); });
